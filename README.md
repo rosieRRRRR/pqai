@@ -11,6 +11,308 @@
 
 -----
 
+# **Summary**
+
+The Post-Quantum Artificial Intelligence (PQAI) specification defines **deterministic, cryptographically enforced mechanisms** for AI model identity, configuration integrity, behavioural stability, and runtime safety. PQAI replaces trust-based AI behaviour with **verification-based, canonical artefacts** that can be independently validated on any device.
+
+PQAI enforces alignment only when all core safety predicates evaluate to true:
+
+```
+valid_runtime
+AND valid_profile
+AND valid_fingerprint
+AND valid_alignment
+AND (valid_safe_prompt for high-risk actions)
+```
+
+If **any** predicate fails, PQAI MUST **fail-closed** and block high-risk model operations.
+
+### **1. Deterministic Identity & Configuration — ModelProfile**
+
+A canonical **ModelProfile** defines the model’s identity and safety state through:
+
+* `model_hash` (SHAKE256-256 of model bytes)
+* `config_hash` (safety configuration)
+* `fingerprint_hash` (behavioural baseline)
+* probe-set identity (probe_set_id / probe_set_hash)
+* provenance and build metadata
+* tick-bounded alignment (`alignment_tick`, `expiry_tick`)
+
+All fields use deterministic CBOR/JCS encoding with SHAKE256 hashing.
+A ModelProfile becomes invalid if expired, mismatched, drifted, or non-canonical.
+
+### **2. Runtime Integrity — PQVL AttestationEnvelope**
+
+PQAI MUST verify runtime integrity before inference, fingerprinting, or SafePrompt use.
+The predicate `valid_runtime` is true only when:
+
+* the AttestationEnvelope is canonical,
+* the signature (ML-DSA-65) is valid,
+* the tick is fresh (≤ 900 seconds),
+* all required probes are valid,
+* `drift_state == "NONE"`.
+
+Any runtime failure → **CRITICAL drift** → mandatory fail-closed behaviour.
+
+### **3. Behavioural Stability — Deterministic Fingerprinting**
+
+PQAI uses deterministic probe sets to generate behavioural fingerprints.
+Drift is detected by comparing:
+
+```
+fingerprint_hash_current == fingerprint_hash_reference
+```
+
+Drift classification:
+
+* **NONE** — stable
+* **WARNING** — minor variations
+* **CRITICAL** — mismatches, stale fingerprints, config drift, runtime failures
+
+CRITICAL drift MUST block all high-risk flows and require alignment rotation.
+
+### **4. High-Risk Flow Protection — SafePrompt**
+
+High-risk natural-language actions require a canonical **SafePrompt** bound to:
+
+* the tick window (`tick_issued` → `expiry_tick`),
+* a specific transport session (`exporter_hash`),
+* a cryptographic intent object (`ConsentProof-Lite`),
+* canonical prompt content (`content_hash`).
+
+SafePrompt prevents replay, substitution, or misdirection across devices or sessions.
+
+Inference for high-risk actions is allowed only when:
+
+```
+valid_runtime
+AND valid_profile
+AND valid_alignment
+AND valid_fingerprint
+AND valid_consent
+AND exporter_hash_match
+```
+
+### **5. Cryptographic & Transport Foundations**
+
+PQAI uses:
+
+* **ML-DSA-65** signatures
+* **SHAKE256-256** hashing
+* **deterministic CBOR/JCS encoding**
+* **strict EpochTick monotonicity and freshness**
+* **exporter-bound sessions (TLSE-EMP or STP)**
+
+All PQAI artefacts are designed for **bit-for-bit reproducibility**, offline verification, and cross-platform consistency.
+
+### **6. Alignment Governance & Ledger Anchoring**
+
+Alignment is valid only when:
+
+```
+alignment_tick >= current_tick - alignment_window
+```
+
+Expired alignment requires fingerprint regeneration and ModelProfile rotation.
+All alignment, drift, and governance events MUST be recorded as canonical, signed ledger entries.
+
+### **Result**
+
+PQAI ensures that AI systems operate only under:
+
+* verified identity,
+* verified configuration,
+* verified runtime integrity,
+* verified behavioural stability,
+* verified user/policy intent.
+
+No drift, misconfiguration, or runtime compromise can cause silent misbehaviour.
+PQAI delivers **cryptographically constrained, deterministic, auditable AI behaviour** suitable for sovereign, regulated, offline, and multi-device environments.
+
+---
+
+# **INDEX**
+
+### **[ABSTRACT](#abstract)**
+
+### **[PROBLEM STATEMENT](#problem-statement)**
+
+---
+
+## **1. PURPOSE AND SCOPE**
+
+* [1.1 Purpose](#11-purpose)
+* [1.2 Scope](#12-scope)
+* [WHAT THIS SPECIFICATION COVERS](#what-this-specification-covers-normative)
+* [1.3 Relationship to PQSF](#13-relationship-to-pqsf)
+* [1.4 Relationship to PQHD](#14-relationship-to-pqhd)
+* [1.5 Relationship to PQVL](#15-relationship-to-pqvl)
+* [1.6 Relationship to Epoch Clock and Time](#16-relationship-to-epoch-clock-and-time)
+* [1.6.1 Canonical EpochTick Structure](#161-canonical-epochtick-structure-normative)
+* [1.7 Verifiable AI Behaviour](#17-verifiable-ai-behaviour-informative)
+* [1.8 Definitions](#18-definitions)
+* [1.9 Threat Model & Assumptions](#19-threat-model--assumptions-informative)
+* [1.10 Independence From Centralised AI Governance](#110-independence-from-centralised-ai-governance)
+* [1.11 Canonical Encoding and Hashing Primitives](#111-canonical-encoding-and-hashing-primitives-normative)
+
+---
+
+## **[2. ARCHITECTURE OVERVIEW](#2-architecture-overview-normative)**
+
+---
+
+## **3. MODEL PROFILE**
+
+* [3.1 Structure](#31-structure)
+* [3.2 model_hash](#32-model_hash)
+* [3.3 config_hash](#33-config_hash)
+* [3.4 fingerprint_hash](#34-fingerprint_hash)
+* [3.5 alignment_tick](#35-alignment_tick)
+* [3.6 expiry_tick](#36-expiry_tick)
+* [3.7 Fingerprint Lifecycle](#37-fingerprint-lifecycle-normative)
+* [3.8 Deterministic Execution Environment](#38-deterministic-execution-environment-informative)
+* [3.9 Canonical Encoding](#39-canonical-encoding)
+
+---
+
+## **4. PQVL INTEGRATION / ATTESTATION ENVELOPE**
+
+* [4.1 Attestation Envelope Structure](#41-attestation-envelope-structure-normative)
+* [4.2 Required Probes](#42-required-probes)
+* [4.3 Attestation Freshness](#43-attestation-freshness)
+* [4.4 Canonical Envelope Handling](#44-canonical-envelope-handling)
+* [4.5 Base valid_runtime Predicate](#45-base-valid_runtime-predicate)
+* [4.6 Minimum Attestation Semantics](#46-minimum-attestation-semantics-normative)
+* [4.7 Predicate-Scoped Integrity Checks](#47-predicate-scoped-integrity-checks)
+
+---
+
+## **5. BEHAVIOURAL FINGERPRINTING**
+
+* [5.1 Fingerprint Definition](#51-fingerprint-definition)
+* [5.2 Fingerprint Probe Set](#52-fingerprint-probe-set)
+* [5.3 Fingerprint Stability Requirements](#53-fingerprint-stability-requirements)
+* [5.4 Tick-Bound Fingerprint Validity](#54-tick-bound-fingerprint-validity)
+* [5.5 Canonical Fingerprint Encoding](#55-canonical-fingerprint-encoding)
+* [5.6 Attestation Enforcement During Fingerprinting](#56-attestation-enforcement-during-fingerprinting)
+* [5.7 Fingerprint Lifecycle](#57-fingerprint-lifecycle-normative)
+* [5.8 Fingerprint Matching Modes](#58-fingerprint-matching-modes-normative)
+
+---
+
+## **6. DRIFT DETECTION**
+
+* [6.1 Drift States](#61-drift-states)
+* [6.2 Drift Evaluation Predicate](#62-drift-evaluation-predicate)
+* [6.3 Drift Conditions](#63-drift-conditions)
+* [6.4 Drift Must Fail-Closed](#64-drift-must-fail-closed)
+* [6.5 Drift Warning State](#65-drift-warning-state)
+
+---
+
+## **7. SAFE-PROMPT ENFORCEMENT**
+
+* [7.1 SafePrompt Definition](#71-safeprompt-definition)
+* [7.2 Tick and Runtime Requirements](#72-tick-and-runtime-requirements)
+* [7.3 Consent Requirements](#73-consent-requirements)
+* [7.4 Prompt Expiry](#74-prompt-expiry)
+* [7.5 Canonical Safe-Prompt Hashing](#75-canonical-safe-prompt-hashing)
+* [7.6 Exporter Binding](#76-exporter-binding)
+* [7.7 ConsentProof-Lite Structure](#77-consentproof-lite-structure-normative)
+* [7.8 SafePrompt Validation Procedure](#78-safeprompt-validation-procedure)
+* [7.9 SafePrompt in Healthcare and Sensitive Environments](#79-safeprompt-in-healthcare-and-sensitive-environments-informative)
+
+---
+
+## **8. ALIGNMENT GOVERNANCE**
+
+* [8.1 Alignment Requires Tick Freshness](#81-alignment-requires-tick-freshness)
+* [8.2 Governance Rotation](#82-governance-rotation)
+* [8.3 Alignment Expiry](#83-alignment-expiry)
+* [8.4 Drift-Triggered Alignment Lockdown](#84-drift-triggered-alignment-lockdown)
+
+---
+
+## **9. TRANSPORT INTEGRATION**
+
+* [9.1 Exporter Hash Definition](#91-exporter-hash-definition-normative)
+* [9.2 Tick-Bound Session Separation](#92-tick-bound-session-separation)
+* [9.3 Deterministic Encoding of Payloads](#93-deterministic-encoding-of-payloads)
+* [9.4 Stealth Mode Integration](#94-stealth-mode-integration)
+* [9.5 Offline Mode](#95-offline-mode)
+
+---
+
+## **10. LEDGER RULES**
+
+* [10.1 Ledger Entry Format](#101-ledger-entry-format)
+* [10.2 Required Ledger Events](#102-required-ledger-events)
+* [10.3 Tick Monotonicity](#103-tick-monotonicity)
+* [10.4 Profile Rotation Logging](#104-profile-rotation-logging)
+* [10.5 Drift Logging](#105-drift-logging)
+* [10.6 Optional Merkle Ledger Construction](#106-optional-merkle-ledger-construction-informative)
+
+---
+
+## **11. PROBE API INTEGRATION**
+
+* [11.1 Required PQAI Probes](#111-required-pqai-probes)
+* [11.2 Probe Canonicalisation](#112-probe-canonicalisation)
+* [11.3 Probe Authority](#113-probe-authority)
+* [11.4 Probe Freshness](#114-probe-freshness)
+* [11.5 Probe Ordering Constraints](#115-probe-ordering-constraints)
+
+---
+
+## **12. ERROR CODES**
+
+* [12.1 Model Identity Errors](#121-model-identity-errors)
+* [12.2 Fingerprint Errors](#122-fingerprint-errors)
+* [12.3 Runtime Integrity Errors](#123-runtime-integrity-errors)
+* [12.4 Drift Errors](#124-drift-errors)
+* [12.5 Prompt Errors](#125-prompt-errors)
+* [12.6 Transport Errors](#126-transport-errors)
+
+---
+
+## **13. SECURITY CONSIDERATIONS**
+
+---
+
+## **14. IMPLEMENTATION NOTES**
+
+---
+
+## **ANNEXES A–M**
+
+* [ANNEX A — Fingerprint & Probe Examples](https://www.google.com/search?q=%23annex-a--fingerprint--probe-examples-informative)
+
+* [ANNEX B — Bootstrapping & Lifecycle Management](https://www.google.com/search?q=%23annex-b--bootstrapping--lifecycle-management-informative)
+
+* [ANNEX C — Drift State Interpretation & Governance Flow](https://www.google.com/search?q=%23annex-c--drift-state-interpretation--governance-flow-informative)
+
+* [ANNEX D — Reference TypeScript Implementation](https://www.google.com/search?q=%23annex-d--reference-typescript-implementation-informative)
+
+* [ANNEX E — Minimal Stack Profile](https://www.google.com/search?q=%23annex-e--minimal-stack-profile-informative)
+
+* [ANNEX F — EpochTick (Minimal PQAI Profile)](https://www.google.com/search?q=%23annex-f--epochtick-minimal-pqai-profile-normative)
+
+* [ANNEX G — ConsentProof-Lite (Minimal AI Safe-Prompt Consent)](https://www.google.com/search?q=%23annex-g--consentproof-lite-minimal-ai-safe-prompt-consent-normative)
+
+* [ANNEX H — AttestationEnvelope (Minimal PQVL Subset)](https://www.google.com/search?q=%23annex-h--attestationenvelope-minimal-pqvl-subset-normative)
+
+* [ANNEX I — Quantum-Safe Login Integration](https://www.google.com/search?q=%23annex-i--quantum-safe-login-integration-informative)
+
+* [ANNEX J — Model Provenance Tracking](https://www.google.com/search?q=%23annex-j--model-provenance-tracking)
+
+* [ANNEX K — Delegated Alignment Authority](https://www.google.com/search?q=%23annex-k--delegated-alignment-authority)
+
+* [ANNEX L — Model Deployment Keys](https://www.google.com/search?q=%23annex-l--model-deployment-keys)
+
+* [ANNEX M — Universal Model Secret Derivation](https://www.google.com/search?q=%23annex-m--universal-model-secret-derivation)
+
+---
+
 # **ABSTRACT**
 
 The Post-Quantum Artificial Intelligence (PQAI) specification establishes deterministic, cryptographically verifiable mechanisms for AI model identity, configuration integrity, behavioural stability, and runtime safety.
