@@ -285,31 +285,31 @@ PQAI delivers **cryptographically constrained, deterministic, auditable AI behav
 
 ## **ANNEXES A–M**
 
-* [ANNEX A — Fingerprint & Probe Examples](https://www.google.com/search?q=%23annex-a--fingerprint--probe-examples-informative)
+* **[ANNEX A — Fingerprint & Probe Examples](https://github.com/rosieRRRRR/pqai#annex-a--fingerprint--probe-examples-informative)**
 
-* [ANNEX B — Bootstrapping & Lifecycle Management](https://www.google.com/search?q=%23annex-b--bootstrapping--lifecycle-management-informative)
+* **[ANNEX B — Bootstrapping & Lifecycle Management](https://github.com/rosieRRRRR/pqai#annex-b--bootstrapping--lifecycle-management-informative)**
 
-* [ANNEX C — Drift State Interpretation & Governance Flow](https://www.google.com/search?q=%23annex-c--drift-state-interpretation--governance-flow-informative)
+* **[ANNEX C — Drift State Interpretation & Governance Flow](https://github.com/rosieRRRRR/pqai#annex-c--drift-state-interpretation--governance-flow-informative)**
 
-* [ANNEX D — Reference TypeScript Implementation](https://www.google.com/search?q=%23annex-d--reference-typescript-implementation-informative)
+* **[ANNEX D — Reference TypeScript Implementation](https://github.com/rosieRRRRR/pqai#annex-d--reference-typescript-implementation-informative)**
 
-* [ANNEX E — Minimal Stack Profile](https://www.google.com/search?q=%23annex-e--minimal-stack-profile-informative)
+* **[ANNEX E — Minimal Stack Profile](https://github.com/rosieRRRRR/pqai#annex-e--minimal-stack-profile-informative)**
 
-* [ANNEX F — EpochTick (Minimal PQAI Profile)](https://www.google.com/search?q=%23annex-f--epochtick-minimal-pqai-profile-normative)
+* **[ANNEX F — EpochTick (Minimal PQAI Profile)](https://github.com/rosieRRRRR/pqai#annex-f--epochtick-minimal-pqai-profile-normative)**
 
-* [ANNEX G — ConsentProof-Lite (Minimal AI Safe-Prompt Consent)](https://www.google.com/search?q=%23annex-g--consentproof-lite-minimal-ai-safe-prompt-consent-normative)
+* **[ANNEX G — ConsentProof-Lite (Minimal AI Safe-Prompt Consent)](https://github.com/rosieRRRRR/pqai#annex-g--consentproof-lite-minimal-ai-safe-prompt-consent-normative)**
 
-* [ANNEX H — AttestationEnvelope (Minimal PQVL Subset)](https://www.google.com/search?q=%23annex-h--attestationenvelope-minimal-pqvl-subset-normative)
+* **[ANNEX H — AttestationEnvelope (Minimal PQVL Subset)](https://github.com/rosieRRRRR/pqai#annex-h--attestationenvelope-minimal-pqvl-subset-normative)**
 
-* [ANNEX I — Quantum-Safe Login Integration](https://www.google.com/search?q=%23annex-i--quantum-safe-login-integration-informative)
+* **[ANNEX I — Quantum-Safe Login Integration](https://github.com/rosieRRRRR/pqai#annex-i--quantum-safe-login-integration-informative)**
 
-* [ANNEX J — Model Provenance Tracking](https://www.google.com/search?q=%23annex-j--model-provenance-tracking)
+* **[ANNEX J — Model Provenance Tracking](https://github.com/rosieRRRRR/pqai#annex-j--model-provenance-tracking)**
 
-* [ANNEX K — Delegated Alignment Authority](https://www.google.com/search?q=%23annex-k--delegated-alignment-authority)
+* **[ANNEX K — Delegated Alignment Authority](https://github.com/rosieRRRRR/pqai#annex-k--delegated-alignment-authority)**
 
-* [ANNEX L — Model Deployment Keys](https://www.google.com/search?q=%23annex-l--model-deployment-keys)
+* **[ANNEX L — Model Deployment Keys](https://github.com/rosieRRRRR/pqai#annex-l--model-deployment-keys)**
 
-* [ANNEX M — Universal Model Secret Derivation](https://www.google.com/search?q=%23annex-m--universal-model-secret-derivation)
+* **[ANNEX M — Universal Model Secret Derivation](https://github.com/rosieRRRRR/pqai#annex-m--universal-model-secret-derivation)**
 
 ---
 
