@@ -1678,6 +1678,262 @@ This allows organisations to leverage AI while retaining control of their data a
 
 -----
 
+# **7.10 Secure Local Memory (NORMATIVE)**
+
+Secure Local Memory enables cryptographically private context for models using PQAI through a verifiable local storage architecture. The `/model_memory/` directory abstraction provides a strict filesystem boundary: the model-serving process receives only canonical PromptContent, while the encrypted LocalMemoryStore remains inaccessible to both the model and provider. This boundary is enforced by PQVL `process_state` and `policy_state` probes (§4.2), turning privacy into a measurable runtime property.
+
+Implementations MAY omit this optional subsystem and remain PQAI-compliant. When implemented, Secure Local Memory binds to SafePrompt (§7.5–§7.8), ConsentProof-Lite (§7.7), PQVL attestation (§4), EpochTick freshness (§1.6.1), and drift classification (§6) without modification to any existing PQAI predicate.
+
+### **7.10.1 Purpose**
+
+The purpose of Secure Local Memory is to enable models using PQAI to incorporate long-term context while preserving determinism (§7.10.4, §7.10.9), runtime safety (§4), privacy boundaries (§7.10.10), and fail-closed behaviour (§7.10.11).
+All contextual memory remains local; only canonical PromptContent is ever visible to the model or provider.
+
+### **7.10.2 LocalMemory Structure**
+
+Implementations MAY maintain a LocalMemoryStore:
+
+```
+LocalMemoryStore = {
+  "items": [* MemoryItem],
+  "last_update_tick": uint
+}
+
+MemoryItem = {
+  "id": tstr,
+  "kind": tstr,
+  "value": any,
+  "updated_tick": uint
+}
+```
+
+Normative requirements:
+
+* LocalMemoryStore MUST reside exclusively on the user’s device.
+
+* LocalMemoryStore MUST be encrypted at rest; encryption keys MUST be generated locally and MUST NOT leave the device.
+
+* MemoryItem.id values MUST be unique within LocalMemoryStore.
+
+* MemoryItem.value MUST be serialisable under the canonical encoding rules in §1.11 and MUST NOT contain non-deterministic types. Deterministic timestamp formats (for example RFC3339 or integer ticks) are permitted.
+
+* MemoryItem.updated_tick MUST satisfy monotonicity for each MemoryItem:
+
+  ```
+  updated_tick(current) >= updated_tick(previous)
+  ```
+
+* LocalMemoryStore MUST NOT appear in any PQAI structure except PromptContent.
+
+* LocalMemoryStore MUST NOT be transmitted outside the device except through canonical PromptContent (§7.10.4).
+
+* LocalMemoryStore MUST NOT be accessed unless `valid_runtime == true` as defined in §4.
+
+* If LocalMemoryStore cannot be decrypted or validated, PQAI MUST return `E_RUNTIME_INVALID`. Implementations MUST NOT attempt silent repair; only explicit user action MAY reset or rebuild the store.
+
+* The `kind` field MAY be used to categorise MemoryItems for deterministic filtering (§7.10.4).
+
+### **7.10.3 Model Memory Folder (Runtime Access)**
+
+PQAI runtimes MAY expose a single persistent read-only directory to the model-serving process:
+
+```
+/model_memory/
+```
+
+Normative requirements:
+
+* `/model_memory/` MUST contain only canonical PromptContent or deterministic memory-derived files.
+* `/model_memory/` MUST be provisioned by the runtime and MUST NOT be writable by the model-serving process.
+* The model-serving process MUST NOT have filesystem visibility outside `/model_memory/`.
+* PQVL `process_state` and `policy_state` probes (§4.2) MUST verify filesystem isolation at each attestation cycle.
+* Any attempted access outside `/model_memory/` MUST cause:
+
+  * `status = "invalid"`
+  * `drift_state = "CRITICAL"` (§6.3)
+  * `valid_runtime = false`
+
+Writes to `/model_memory/` MUST be atomic.
+
+Implementations SHOULD use a deterministic filename such as `context.json`.
+
+### **7.10.4 PromptContent Construction**
+
+PromptContent MAY incorporate the full memory set or a deterministic subset:
+
+```
+PromptContent = {
+  "user_text": tstr,
+  "memory_view": [* MemoryItem]
+}
+```
+
+Normative requirements:
+
+* memory_view MAY contain the entire LocalMemoryStore or a subset.
+
+* If a subset is used, filtering MUST be deterministic, MUST be documented, and MUST occur **before** ordering.
+
+* memory_view MUST be an ordered sequence with stable canonical ordering.
+
+* PromptContent MUST be canonicalised using deterministic CBOR or JCS JSON (§1.11).
+
+* content_hash MUST equal:
+
+  ```
+  SHAKE256-256(canonical(PromptContent))
+  ```
+
+* PromptContent MUST contain only deterministic data structures.
+
+* PromptContent MUST reflect exactly what the model using PQAI will receive.
+
+* Canonicalisation failures MUST cause PromptContent construction failure.
+
+Privacy boundary:
+
+* The PQAI runtime MUST NOT expose any mechanism or side channel from which the model-serving process could access or infer memory not included in memory_view.
+
+### **7.10.5 SafePrompt Binding**
+
+When PromptContent is used for a high-risk or policy-bound action:
+
+* SafePrompt MUST bind PromptContent using `content_hash` (§7.5).
+* SafePrompt MUST satisfy all rules in §7.1–§7.8.
+* ConsentProof-Lite MUST be valid (§7.7).
+* exporter_hash MUST match the current session (§7.6).
+* SafePrompt MUST be tick-fresh (§7.2).
+
+Any mismatch MUST yield the applicable error (§12).
+
+### **7.10.6 Runtime Preconditions**
+
+LocalMemoryStore MAY only be accessed when:
+
+```
+valid_runtime == true
+```
+
+If runtime validity fails or transitions to false:
+
+* LocalMemoryStore MUST NOT be accessed.
+* Previously constructed PromptContent MUST be discarded.
+* PQAI MUST return `E_RUNTIME_INVALID`.
+
+### **7.10.7 Model Access to Full Memory**
+
+When memory_view includes all MemoryItems:
+
+* The model-serving process MUST read only from `/model_memory/`.
+* The PQAI runtime MUST NOT expose side channels or metadata enabling inference of memory items outside memory_view.
+* PQVL MUST validate filesystem isolation (§4).
+
+### **7.10.8 Memory Updates**
+
+After inference:
+
+```
+MemoryItem.updated_tick = current_tick
+LocalMemoryStore.last_update_tick = current_tick
+```
+
+Normative requirements:
+
+* Updates MUST use canonical encoding.
+* Updates MUST be atomic with respect to `last_update_tick`.
+* Updates MUST NOT modify memory previously used in SafePrompt-bound inference.
+* Updates MUST satisfy EpochTick monotonicity (§1.6.1).
+* Corrupted or undecryptable LocalMemoryStore MUST yield `E_RUNTIME_INVALID`.
+
+### **7.10.9 Determinism Requirements**
+
+Implementations MUST ensure:
+
+* Given identical LocalMemoryStore and user_text, PromptContent MUST be identical.
+* Identical PromptContent MUST yield identical content_hash.
+* memory_view selection MUST be deterministic.
+* memory_view ordering MUST be canonical.
+* If LocalMemoryStore is empty, memory_view MUST be empty.
+
+If determinism cannot be maintained, PromptContent MUST be rejected.
+
+### **7.10.10 Privacy and Non-Disclosure**
+
+Secure Local Memory MUST ensure:
+
+* LocalMemoryStore contents, encryption keys, and metadata MUST NEVER leave the device.
+* Only canonical PromptContent is transmitted.
+* LocalMemoryStore MUST NOT appear in:
+
+  * ModelProfile (§3)
+  * AttestationEnvelope (§4)
+  * ConsentProof-Lite (§7.7)
+  * PQAI ledger entries (§10)
+  * Drift artefacts (§6)
+
+except as explicit user-provided text in PromptContent.
+
+### **7.10.11 Failure Semantics**
+
+The following MUST trigger fail-closed behaviour:
+
+* invalid or non-canonical PromptContent
+* SafePrompt expiry (§7.4)
+* invalid ConsentProof-Lite (§7.7)
+* exporter_hash mismatch (§7.6)
+* stale or invalid attestation (§4.3)
+* any required PQVL probe invalid (§4.2)
+* filesystem access outside `/model_memory/`
+* corrupted or undecryptable LocalMemoryStore
+* `drift_state = "CRITICAL"` (§6.3)
+
+PQAI MUST:
+
+```
+deny inference
+block LocalMemoryStore access
+return the applicable error (§12)
+```
+
+Any such failure MUST invalidate any SafePrompt constructed in the current invocation and require full revalidation before further high-risk inference.
+
+### **7.10.12 Pseudocode (Informative)**
+
+```
+if not pqai_check_runtime(attestation, current_tick):
+    return error("E_RUNTIME_INVALID")
+
+items = decrypt(LocalMemoryStore).items
+
+PromptContent = {
+    user_text: user_text,
+    memory_view: items
+}
+
+bytes = canonical_encode(PromptContent)
+content_hash = shake256_256(bytes)
+
+safe_prompt = pqai_build_safe_prompt(
+    PromptContent,
+    action,
+    consent_id,
+    current_tick,
+    expiry_window,
+    session.exporter_hash
+)
+
+if is_high_risk:
+    result = pqai_validate_safe_prompt(safe_prompt, ctx)
+    if not result.allowed:
+        return result
+
+write("/model_memory/context.json", canonical_encode(PromptContent))
+
+return model.infer(PromptContent)
+```
+
+---
+
 # **8. ALIGNMENT GOVERNANCE (NORMATIVE)**
 
 Alignment governance ensures that AI behaviour is anchored to ticks, profiles, and drift states.
@@ -2909,6 +3165,433 @@ function pqai_validate_high_risk_with_login(ctx):
   * Authentication systems **MUST NOT** weaken PQAI’s fail-closed rules, canonical encoding, or drift classification semantics.
 
 -----
+
+# **ANNEX J — Model Provenance Tracking (NORMATIVE)**
+
+## **J.1 Purpose**
+
+Model provenance provides a deterministic, cryptographically verifiable lineage for every model instance. Provenance prevents substitution, silent updates, undeclared fine-tuning, configuration drift, or unverified forks from being used under PQAI predicates.
+
+## **J.2 ProvenanceRecord Structure**
+
+```
+ProvenanceRecord = {
+  record_id:          tstr,
+  parent_record_id:   tstr / null,
+  model_hash:         bstr,
+  config_hash:        bstr,
+  fingerprint_hash:   bstr,
+  build_hash:         bstr,
+  provenance_tick:    EpochTick,
+  provenance_reason:  tstr,
+  metadata:           { * tstr => any },
+  signature_pq:       bstr
+}
+```
+
+Requirements:
+
+* MUST be encoded using deterministic CBOR or JCS JSON.
+* All *_hash fields MUST be SHAKE256-256.
+* provenance_tick MUST satisfy EpochTick monotonicity and freshness.
+* signature_pq MUST be ML-DSA-65.
+* metadata MUST be canonical.
+* provenance_reason MUST describe the exact deterministic cause of the record.
+
+## **J.3 Provenance Chain Rules**
+
+1. A model MUST begin with a root ProvenanceRecord (`parent_record_id = null`).
+2. Each subsequent record MUST reference exactly one parent.
+3. Chains MUST be acyclic and monotonic in ticks.
+4. Each record MUST match ModelProfile fields (§3).
+5. Any mismatch MUST set drift_state = CRITICAL.
+
+## **J.4 Provenance Rotation**
+
+A new ProvenanceRecord MUST be created if any of the following change:
+
+* model_hash
+* config_hash
+* fingerprint_hash
+* build_hash
+* alignment rotation
+* drift remediation
+
+Each rotation MUST write a `provenance_updated` ledger entry (§10).
+
+## **J.5 Provenance Validation**
+
+A model is provenance-valid only when:
+
+* signature verifies
+* provenance_tick is valid
+* hashes match actual artefacts
+* chain is continuous and canonical
+
+Any failure MUST set `valid_profile = false` and drift_state = CRITICAL.
+
+---
+
+# **ANNEX K — Delegated Alignment Authority (NORMATIVE)**
+
+## **K.1 Purpose**
+
+Delegated alignment allows authorised entities to perform alignment-affecting actions without weakening PQAI predicates.
+
+## **K.2 AlignmentDelegation Object**
+
+```
+AlignmentDelegation = {
+  delegation_id: tstr,
+  model_id: tstr,
+  delegate: tstr,
+  permissions: [* tstr],
+  tick_issued: uint,
+  tick_expiry: uint,
+  signature_pq: bstr
+}
+```
+
+Requirements:
+
+* MUST be canonical.
+* MUST be signed using ML-DSA-65 by an authorised governance key.
+* tick_issued and tick_expiry MUST satisfy EpochTick rules.
+
+## **K.3 Delegation Enforcement**
+
+* Delegates MAY perform approved actions such as ModelProfile rotation, fingerprint updates, or provenance updates.
+* Delegates MUST NOT bypass:
+
+  * SafePrompt (§7)
+  * PQVL attestation (§4)
+  * drift classification (§6)
+  * alignment freshness rules (§8)
+* Delegation MUST fail-closed if expired or malformed.
+
+## **K.4 Ledger Integration**
+
+Each delegated action MUST produce a ledger entry:
+
+* `delegation_created`
+* `delegation_used`
+* `delegation_expired`
+
+Ledger ticks MUST remain monotonic (§10.3).
+
+---
+
+# **ANNEX L — Model Deployment Keys (NORMATIVE)**
+
+## **L.1 Purpose**
+
+Model Deployment Keys authenticate deployment artefacts without granting authority over alignment, provenance, or runtime-integrity predicates.
+
+## **L.2 DeploymentKey Structure**
+
+```
+DeploymentKey = {
+  key_id: tstr,
+  pubkey_pq: bstr,
+  scope: [* tstr],      ; e.g. ["artifact_signing"]
+  issuer: tstr,
+  tick_issued: uint,
+  tick_expiry: uint,
+  signature_pq: bstr
+}
+```
+
+Requirements:
+
+* MUST be canonical.
+* MUST use ML-DSA-65 signatures.
+* MUST NOT sign alignment, provenance, or runtime artefacts.
+
+## **L.3 DeploymentEnvelope**
+
+```
+DeploymentEnvelope = {
+  model_id: tstr,
+  model_hash: bstr,
+  build_hash: bstr,
+  deployment_meta: { * tstr => any },
+  tick: uint,
+  signature_pq: bstr
+}
+```
+
+Deployment envelopes MUST NOT override:
+
+* ModelProfile (§3)
+* alignment rules (§8)
+* drift classification (§6)
+* PQVL integrity (§4)
+
+## **L.4 Key Separation Rules**
+
+* Deployment keys MUST NOT sign provenance records.
+* Governance keys MUST NOT sign deployment artefacts.
+* Expired deployment keys MUST NOT validate any artefact.
+
+---
+
+# **ANNEX M — Universal Model Secret Derivation (NORMATIVE)**
+
+## **M.1 Purpose**
+
+Universal Model Secret Derivation (UMSD) provides deterministic, domain-separated secrets tied to canonical model artefacts, without embedding secret data inside the model or altering PQAI predicates.
+
+## **M.2 Derivation Function**
+
+```
+model_secret = KDF(
+    domain = "PQAI-UMSD",
+    input = canonical_encode({
+        model_hash,
+        config_hash,
+        fingerprint_hash
+    }),
+    salt = deployment_salt
+)
+```
+
+Requirements:
+
+* KDF MUST be HKDF-SHAKE256 or equivalent PQ-safe primitive.
+* salt MUST be environment-scoped and MUST NOT be reused across deployment domains.
+* input MUST follow canonical encoding rules (§1.11).
+
+## **M.3 Secret Classes**
+
+```
+SecretClass = {
+  class_id: tstr,      ; e.g. "probes", "safeprompt", "provenance_export"
+  secret: bstr
+}
+```
+
+Secret classes MAY be used for:
+
+* encrypting probe sets
+* encrypting SafePrompt audit trails
+* protecting provenance exports
+
+Secret classes MUST NOT be used for:
+
+* signing
+* alignment predicates
+* drift classification
+* runtime integrity decisions
+
+## **M.4 Rotation**
+
+Secrets MUST rotate when:
+
+* ModelProfile rotates
+* fingerprint rotates
+* configuration changes
+
+A `model_secret_rotated` ledger entry MUST be written.
+
+---
+
+# **ANNEX N — Model Provenance Tracking (NORMATIVE)**
+
+## **N.1 Purpose**
+
+Model provenance ensures every model instance, update, derivative, or deployment can be traced through a deterministic, cryptographically verifiable lineage. Provenance tracking prevents substitution, silent upgrades, configuration drift, undeclared fine-tuning, or unverified forks from being used in environments governed by PQAI predicates.
+
+Provenance MUST be canonical, tick-bound, and reproducible across implementations.
+
+---
+
+## **N.2 ProvenanceRecord Structure (NORMATIVE)**
+
+```
+ProvenanceRecord = {
+  "record_id":          tstr,
+  "parent_record_id":   tstr / null,
+  "model_hash":         bstr,
+  "config_hash":        bstr,
+  "fingerprint_hash":   bstr,
+  "build_hash":         bstr,
+  "provenance_tick":    EpochTick,
+  "provenance_reason":  tstr,
+  "metadata":           { * tstr => any },
+  "signature_pq":       bstr
+}
+```
+
+Requirements:
+
+1. MUST be encoded using deterministic CBOR or JCS JSON.
+2. MUST be signed using ML-DSA-65.
+3. `model_hash`, `config_hash`, `fingerprint_hash`, and `build_hash` MUST be SHAKE256-256 digests of canonical artefacts.
+4. `provenance_tick` MUST satisfy EpochTick rules (freshness, monotonicity, profile_ref correctness).
+5. `metadata` MUST be canonical; non-canonical keys or ambiguous ordering are invalid.
+6. `provenance_reason` MUST describe the deterministic cause of the new record (e.g., “initial_profile”, “safety_config_update”, “fine_tune”, “deployment_build”, “alignment_rotation”, “drift_repair”).
+
+---
+
+## **N.3 Provenance Chain Rules (NORMATIVE)**
+
+1. Every model instance MUST have a provenance chain beginning with a root ProvenanceRecord where `parent_record_id = null`.
+2. Each subsequent record MUST reference exactly one parent via `parent_record_id`.
+3. The chain MUST be strictly acyclic.
+4. Chain integrity MUST be validated by verifying each record’s signature, tick, and canonical hashes.
+5. Chain traversal MUST be deterministic and MUST terminate at the root record.
+6. A model is valid only if its active ModelProfile hashes match the head of its provenance chain.
+
+---
+
+## **N.4 Provenance Events**
+
+A new provenance record MUST be created for any of the following:
+
+* initial model registration
+* model rebuild
+* safety-configuration change
+* alignment rotation
+* drift remediation
+* fine-tuning or domain-specific training
+* deployment-specific packaging difference
+* probe-set changes
+* any update that changes model_hash, config_hash, fingerprint_hash, or build_hash
+
+If none of these artefacts change, a new provenance record MUST NOT be generated.
+
+---
+
+## **N.5 Canonical Hash Requirements (NORMATIVE)**
+
+Provenance MUST use canonical SHAKE256-256 hashes computed over deterministic encodings of the following:
+
+```
+model_hash         = SHAKE256-256(canonical_model_bytes)
+config_hash        = SHAKE256-256(canonical_config)
+fingerprint_hash   = SHAKE256-256(canonical_fingerprint)
+build_hash         = SHAKE256-256(canonical_build_metadata)
+```
+
+Implementations MUST NOT add, remove, reorder, or transform fields during hashing.
+Whitespace, comments, and encoding differences MUST NOT alter hash values.
+
+---
+
+## **N.6 Validation Procedure (NORMATIVE)**
+
+A model instance is provenance-valid only when all steps succeed:
+
+1. Canonicalise the ProvenanceRecord.
+2. Verify ML-DSA-65 signature.
+3. Validate provenance_tick using EpochTick rules.
+4. Verify model_hash against the actual model bytes.
+5. Verify config_hash against the active safety configuration.
+6. Verify fingerprint_hash against the reference fingerprint.
+7. Verify build_hash against build metadata.
+8. Verify parent_record_id links to a valid canonical parent.
+9. Verify the chain is continuous, monotonic in ticks, and terminates at a root.
+
+If any step fails, `valid_profile = false` for PQAI.
+
+---
+
+## **N.7 Integration With ModelProfile (NORMATIVE)**
+
+A ModelProfile MUST include:
+
+```
+provenance_ref: tstr   ; record_id of the active ProvenanceRecord
+```
+
+Validation requires:
+
+1. provenance_ref MUST identify the head record of the provenance chain.
+2. The ModelProfile’s own model_hash, config_hash, fingerprint_hash, and probe_set_id MUST match those declared in the referenced record.
+3. Any mismatch MUST set `valid_profile = false`.
+
+---
+
+## **N.8 Drift Interaction (NORMATIVE)**
+
+If PQVL or fingerprinting classifies drift as CRITICAL:
+
+1. Provenance MUST be updated via a new ProvenanceRecord with reason = "drift_repair" or "alignment_rotation".
+2. A new ModelProfile MUST bind to this updated provenance.
+3. Previous provenance records MUST remain intact and auditable.
+
+---
+
+## **N.9 Deployment-Scoped Provenance (NORMATIVE)**
+
+Deployments MAY require an additional provenance layer for packaging, quantisation, runtime-specific optimisations, or environment-linked builds.
+
+Deployment provenance MUST:
+
+1. produce a new ProvenanceRecord with a unique build_hash,
+2. inherit the previous record as parent_record_id,
+3. preserve original model_hash and config_hash,
+4. declare provenance_reason = "deployment_build".
+
+This ensures deployment differences cannot masquerade as canonical model identities.
+
+---
+
+## **N.10 Ledger Requirements (NORMATIVE)**
+
+All provenance updates MUST produce a ledger entry:
+
+```
+{
+  "event": "provenance_updated",
+  "record_id": tstr,
+  "parent_record_id": tstr / null,
+  "model_hash": bstr,
+  "config_hash": bstr,
+  "fingerprint_hash": bstr,
+  "build_hash": bstr
+}
+```
+
+Requirements:
+
+1. MUST be signed with ML-DSA-65.
+2. MUST include provenance_tick.
+3. MUST obey monotonic tick ordering.
+4. MUST follow append-only rules.
+
+---
+
+## **N.11 Provenance Export and Import (NORMATIVE)**
+
+Export:
+
+* MUST include all ProvenanceRecord objects from root to head.
+* MUST preserve ordering and canonical encoding.
+* MUST NOT omit any part of the chain.
+* MUST include a signed export metadata record.
+
+Import:
+
+* MUST revalidate every record.
+* MUST recompute all hashes locally.
+* MUST rebuild the chain identically.
+* MUST reject imports with broken lineage, mismatches, or signature failures.
+
+---
+
+## **N.12 Forbidden Behaviours (NORMATIVE)**
+
+Implementations MUST NOT:
+
+* generate provenance without a real model or configuration change
+* rewrite history or modify past ProvenanceRecord entries
+* fork provenance chains without explicit parent linkage
+* downgrade or omit provenance in ModelProfile
+* use non-canonical artefacts for hashing
+* bypass provenance validation during alignment or deployment flows
+
+---
 
 # **APPENDIX 1 — Canonical Encoding Rules (NORMATIVE)**
 
