@@ -6,7 +6,7 @@
 **Status:** Implementation Ready. Domain Evaluation Requested.
 **Author:** rosiea
 **Contact:** PQRosie@proton.me
-**Date:** November 2025
+**Date:** December 2025
 **Licence:** Apache License 2.0 — Copyright 2025 rosiea
 
 -----
@@ -146,7 +146,7 @@ PQAI delivers **cryptographically constrained, deterministic, auditable AI behav
 * [WHAT THIS SPECIFICATION COVERS](#what-this-specification-covers-normative)
 * [1.3 Relationship to PQSF](#13-relationship-to-pqsf)
 * [1.4 Relationship to PQHD](#14-relationship-to-pqhd)
-* [1.5 Relationship to PQVL](#15-relationship-to-pqvl)
+* [1.5 PQAI Technical Tiers (Scope Clarification)](#15-pqai-technical-tiers-scope-clarification)
 * [1.6 Relationship to Epoch Clock and Time](#16-relationship-to-epoch-clock-and-time)
 * [1.6.1 Canonical EpochTick Structure](#161-canonical-epochtick-structure-normative)
 * [1.7 Verifiable AI Behaviour](#17-verifiable-ai-behaviour-informative)
@@ -221,6 +221,7 @@ PQAI delivers **cryptographically constrained, deterministic, auditable AI behav
 * [7.7 ConsentProof-Lite Structure](#77-consentproof-lite-structure-normative)
 * [7.8 SafePrompt Validation Procedure](#78-safeprompt-validation-procedure)
 * [7.9 SafePrompt in Healthcare and Sensitive Environments](#79-safeprompt-in-healthcare-and-sensitive-environments-informative)
+* [7.10 Secure Local Memory](#710-secure-local-memory-normative)
 
 ---
 
@@ -285,31 +286,35 @@ PQAI delivers **cryptographically constrained, deterministic, auditable AI behav
 
 ## **ANNEXES A–M**
 
-* **[ANNEX A — Fingerprint & Probe Examples](https://github.com/rosieRRRRR/pqai#annex-a--fingerprint--probe-examples-informative)**
+* [ANNEX A — Fingerprint & Probe Examples (INFORMATIVE)](#annex-a--fingerprint--probe-examples-informative)
+* [ANNEX B — Bootstrapping & Lifecycle Management (INFORMATIVE)](#annex-b--bootstrapping--lifecycle-management-informative)
+* [ANNEX C — Drift State Interpretation & Governance Flow (INFORMATIVE)](#annex-c--drift-state-interpretation--governance-flow-informative)
+* [ANNEX D — Reference TypeScript Implementation (INFORMATIVE)](#annex-d--reference-typescript-implementation-informative)
+* [ANNEX E — Minimal Stack Profile (INFORMATIVE)](#annex-e--minimal-stack-profile-informative)
+* [ANNEX F — EpochTick (Minimal PQAI Profile) (NORMATIVE)](#annex-f--epochtick-minimal-pqai-profile-normative)
+* [ANNEX G — ConsentProof-Lite (Minimal AI Safe-Prompt Consent) (NORMATIVE)](#annex-g--consentproof-lite-minimal-ai-safe-prompt-consent-normative)
+* [ANNEX H — AttestationEnvelope (Minimal PQVL Subset) (NORMATIVE)](#annex-h--attestationenvelope-minimal-pqvl-subset-normative)
+* [ANNEX I — Quantum-Safe Login Integration (INFORMATIVE)](#annex-i--quantum-safe-login-integration-informative)
+* [ANNEX J — Model Provenance Tracking (NORMATIVE)](#annex-j--model-provenance-tracking-normative)
+* [ANNEX K — Delegated Alignment Authority (NORMATIVE)](#annex-k--delegated-alignment-authority-normative)
+* [ANNEX L — Model Deployment Keys (NORMATIVE)](#annex-l--model-deployment-keys-normative)
+* [ANNEX M — Universal Model Secret Derivation (NORMATIVE)](#annex-m--universal-model-secret-derivation-normative)
 
-* **[ANNEX B — Bootstrapping & Lifecycle Management](https://github.com/rosieRRRRR/pqai#annex-b--bootstrapping--lifecycle-management-informative)**
+---
 
-* **[ANNEX C — Drift State Interpretation & Governance Flow](https://github.com/rosieRRRRR/pqai#annex-c--drift-state-interpretation--governance-flow-informative)**
+## **APPENDICES**
 
-* **[ANNEX D — Reference TypeScript Implementation](https://github.com/rosieRRRRR/pqai#annex-d--reference-typescript-implementation-informative)**
+* [APPENDIX 1 — Canonical Encoding Rules (NORMATIVE)](#appendix-1--canonical-encoding-rules-normative)
+* [APPENDIX 2 — SHAKE256 Hashing Rules (NORMATIVE)](#appendix-2--shake256-hashing-rules-normative)
+* [APPENDIX 3 — Error Code Matrix (NORMATIVE)](#appendix-3--error-code-matrix-normative)
+* [APPENDIX 4 — Ledger Serialization Format (NORMATIVE)](#appendix-4--ledger-serialization-format-normative)
 
-* **[ANNEX E — Minimal Stack Profile](https://github.com/rosieRRRRR/pqai#annex-e--minimal-stack-profile-informative)**
+---
 
-* **[ANNEX F — EpochTick (Minimal PQAI Profile)](https://github.com/rosieRRRRR/pqai#annex-f--epochtick-minimal-pqai-profile-normative)**
+## **ACKNOWLEDGEMENTS**
 
-* **[ANNEX G — ConsentProof-Lite (Minimal AI Safe-Prompt Consent)](https://github.com/rosieRRRRR/pqai#annex-g--consentproof-lite-minimal-ai-safe-prompt-consent-normative)**
+* [ACKNOWLEDGEMENTS](#acknowledgements-informative)
 
-* **[ANNEX H — AttestationEnvelope (Minimal PQVL Subset)](https://github.com/rosieRRRRR/pqai#annex-h--attestationenvelope-minimal-pqvl-subset-normative)**
-
-* **[ANNEX I — Quantum-Safe Login Integration](https://github.com/rosieRRRRR/pqai#annex-i--quantum-safe-login-integration-informative)**
-
-* **[ANNEX J — Model Provenance Tracking](https://github.com/rosieRRRRR/pqai#annex-j--model-provenance-tracking)**
-
-* **[ANNEX K — Delegated Alignment Authority](https://github.com/rosieRRRRR/pqai#annex-k--delegated-alignment-authority)**
-
-* **[ANNEX L — Model Deployment Keys](https://github.com/rosieRRRRR/pqai#annex-l--model-deployment-keys)**
-
-* **[ANNEX M — Universal Model Secret Derivation](https://github.com/rosieRRRRR/pqai#annex-m--universal-model-secret-derivation)**
 
 ---
 
@@ -492,64 +497,105 @@ function pqai_fetch_temporal_and_consent_state(adapter):
     return { tick: tick, consent: consent }
 ```
 
-## **1.4 Relationship to PQHD**
+### **1.4 Relationship to PQHD (NORMATIVE)**
 
-**PQAI** MAY be used inside a post-quantum wallet for:
+**PQAI** integrates with **PQHD** exclusively as a consumer of custody guarantees.
+**PQAI does not define, infer, or enforce custody authority** and MUST NOT be interpreted as doing so.
 
-  * high-risk natural-language intent confirmation,
-  * behavioural-safety checks before recovery operations,
-  * additional friction for large-value actions,
-  * policy-aligned interpretation assistance.
+All custody semantics referenced in this specification resolve solely to **PQHD custody profiles**, which are defined and enforced outside this document.
 
-**PQAI** must not weaken any external custody predicates, override policy enforcers, or bypass policy thresholds. **PQAI** is an additional verification and alignment layer around AI-mediated assistance, not a replacement for wallet governance or policy enforcement.
+Where this specification refers to “custody-grade”, “custodial”, or “non-custodial” behaviour, such references **MUST** be interpreted according to the applicable **PQHD profile**, not PQAI configuration, tier, or deployment mode.
 
-### Pseudocode (Informative) — Wallet Calling PQAI as an Extra Check
+PQAI output, inference, analysis, explanation, or assistance **MUST NEVER** be treated as authorisation for a spend or custody action.
 
-```
-// Example: wallet calling PQAI to verify that an intent description is consistent with a PSBT
-function wallet_intent_check_with_pqai(psbt, natural_language_description):
-    ctx = {
-        psbt: psbt,
-        description: natural_language_description,
-        is_high_risk: true
-    }
+---
 
-    pqai_result = PQAI.evaluate_intent(ctx)
+### **PQHD Custody (Baseline)**
 
-    if not pqai_result.allowed:
-        return error("E_POLICY_FAILED_PQAI")
+The minimum conformance level that qualifies as **PQHD Custody**.
 
-    return ok()
-```
+PQHD Custody (Baseline) requires:
 
-## **1.5 Relationship to PQVL**
+* a multi-device signing quorum (≥2 independent signer runtimes);
+* mandatory **PQVL** runtime attestation on all participating devices;
+* canonical PSBT validation and equivalence;
+* deterministic policy enforcement;
+* explicit **ConsentProof** binding;
+* deterministic ledger continuity.
 
-In this specification, “**PQVL**” refers to the runtime-integrity layer whose semantics are captured by the canonical attestation envelope in §4. **PQAI** MUST verify runtime integrity using this envelope before performing:
+When PQAI is used to assist or interpret high-risk wallet actions, including recovery explanation, policy interpretation, or intent clarification, **PQHD Custody (Baseline)** MUST be assumed.
 
-  * fingerprint evaluation
-  * **ModelProfile** checking
-  * behavioural self-introspection
-  * prompt-level safety checks
-  * any model-mediated external actions
+A single compromised device MUST NOT be capable of authorising a spend, regardless of PQAI output.
 
-If attestation indicates integrity failure or drift, **PQAI** MUST fail-closed.
+---
 
-### Pseudocode (Informative) — Mapping Attestation to valid\_runtime
+### **PQHD Custody (Enterprise)**
 
-```
-// Convert attestation envelope into a simple valid_runtime predicate
-function pqai_check_runtime(attestation, current_tick):
-    if attestation is null:
-        return false
+Builds on **PQHD Custody (Baseline)** and adds:
 
-    if not pqai_validate_attestation(attestation, current_tick):
-        return false
+* quorum diversity constraints;
+* guardian participation and deterministic delays;
+* formal recovery capsules;
+* emergency clock governance;
+* cross-device reconciliation;
+* full auditability suitable for institutional or sovereign threat models.
 
-    if attestation.drift_state != "NONE":
-        return false
+PQAI MAY be used in Enterprise deployments to assist governance workflows, guardian review, or recovery explanation.
+Enterprise features are not required for PQAI correctness.
 
-    return true
-```
+---
+
+### **Transactional Profile (Non-Custodial Profile)**
+
+A single-device configuration that MAY implement canonical structures such as:
+
+* ConsentProof usage;
+* EpochTick usage;
+* deterministic policy objects;
+* PSBT canonicalisation;
+* basic ledger continuity;
+
+but fails under single-device runtime compromise.
+
+The Transactional Profile:
+
+* MUST NOT be described or marketed as PQHD Custody;
+* MUST NOT claim custody-grade guarantees;
+* MAY use PQAI for local interpretation or user assistance only;
+* MUST NOT be used to justify security claims that rely on multi-device authority.
+
+PQAI-assisted actions executed under the Transactional Profile MUST be treated as non-custodial.
+
+---
+
+### **Custody Authority Clarification (NORMATIVE)**
+
+Custody authority is determined exclusively by **PQHD tier enforcement**.
+
+**PQAI** MAY assist, interpret, explain, or generate deterministic artefacts, but **MUST NOT**:
+
+* authorise spends;
+* replace quorum enforcement;
+* bypass PQHD policy;
+* weaken custody guarantees.
+
+Any implementation that treats PQAI output as custody authority is non-conformant with this specification.
+
+---
+
+## **1.5 PQAI Technical Tiers (Scope Clarification) (NORMATIVE)**
+
+Where this specification refers to **PQAI technical tiers** (including software-only, hardware-backed, enclave-based, or dedicated root-of-trust configurations), such tiers describe **implementation assurance characteristics only**.
+
+PQAI technical tiers:
+
+* define cryptographic, hardware, or runtime assurance properties;
+* do not define custody semantics;
+* do not imply custodial or non-custodial operation;
+* MUST NOT be used to justify custody guarantees or authority.
+
+Custody guarantees, authorisation semantics, and compromise tolerance are defined exclusively by **PQHD custody profiles** and their enforcement mechanisms.
+
 
 ## **1.6 Relationship to Epoch Clock and Time**
 
@@ -1272,9 +1318,9 @@ function pqai_fingerprint_fresh(fingerprint, current_tick, window):
 
 ## **5.5 Canonical Fingerprint Encoding**
 
-Fingerprint objects MUST use the global canonical encoding rules in §1.11. Encodings MUST be identical across devices.
+Fingerprint objects MUST use the global canonical encoding rules in §1.11.
+Encodings MUST be identical across devices.
 
-The following text is the continuation of your specification, reformatted to match the style of the previous blocks.
 
 -----
 
@@ -3166,13 +3212,17 @@ function pqai_validate_high_risk_with_login(ctx):
 
 -----
 
-# **ANNEX J — Model Provenance Tracking (NORMATIVE)**
+## **ANNEX J — Model Provenance Tracking (NORMATIVE)**
 
-## **J.1 Purpose**
+### **J.1 Purpose**
 
-Model provenance provides a deterministic, cryptographically verifiable lineage for every model instance. Provenance prevents substitution, silent updates, undeclared fine-tuning, configuration drift, or unverified forks from being used under PQAI predicates.
+Model provenance ensures every model instance, update, derivative, or deployment can be traced through a deterministic, cryptographically verifiable lineage. Provenance tracking prevents substitution, silent upgrades, configuration drift, undeclared fine-tuning, or unverified forks from being used in environments governed by PQAI predicates.
 
-## **J.2 ProvenanceRecord Structure**
+Provenance MUST be canonical, tick-bound, and reproducible across implementations.
+
+---
+
+### **J.2 ProvenanceRecord Structure (NORMATIVE)**
 
 ```
 ProvenanceRecord = {
@@ -3191,46 +3241,172 @@ ProvenanceRecord = {
 
 Requirements:
 
-* MUST be encoded using deterministic CBOR or JCS JSON.
-* All *_hash fields MUST be SHAKE256-256.
-* provenance_tick MUST satisfy EpochTick monotonicity and freshness.
-* signature_pq MUST be ML-DSA-65.
-* metadata MUST be canonical.
-* provenance_reason MUST describe the exact deterministic cause of the record.
-
-## **J.3 Provenance Chain Rules**
-
-1. A model MUST begin with a root ProvenanceRecord (`parent_record_id = null`).
-2. Each subsequent record MUST reference exactly one parent.
-3. Chains MUST be acyclic and monotonic in ticks.
-4. Each record MUST match ModelProfile fields (§3).
-5. Any mismatch MUST set drift_state = CRITICAL.
-
-## **J.4 Provenance Rotation**
-
-A new ProvenanceRecord MUST be created if any of the following change:
-
-* model_hash
-* config_hash
-* fingerprint_hash
-* build_hash
-* alignment rotation
-* drift remediation
-
-Each rotation MUST write a `provenance_updated` ledger entry (§10).
-
-## **J.5 Provenance Validation**
-
-A model is provenance-valid only when:
-
-* signature verifies
-* provenance_tick is valid
-* hashes match actual artefacts
-* chain is continuous and canonical
-
-Any failure MUST set `valid_profile = false` and drift_state = CRITICAL.
+1. MUST be encoded using deterministic CBOR or JCS JSON.
+2. MUST be signed using ML-DSA-65.
+3. `model_hash`, `config_hash`, `fingerprint_hash`, and `build_hash` MUST be SHAKE256-256 digests of canonical artefacts.
+4. `provenance_tick` MUST satisfy EpochTick rules (freshness, monotonicity, profile_ref correctness).
+5. `metadata` MUST be canonical; non-canonical keys or ambiguous ordering are invalid.
+6. `provenance_reason` MUST describe the deterministic cause of the new record (e.g., `"initial_profile"`, `"safety_config_update"`, `"fine_tune"`, `"deployment_build"`, `"alignment_rotation"`, `"drift_repair"`).
 
 ---
+
+### **J.3 Provenance Chain Rules (NORMATIVE)**
+
+1. Every model instance MUST have a provenance chain beginning with a root ProvenanceRecord where `parent_record_id = null`.
+2. Each subsequent record MUST reference exactly one parent via `parent_record_id`.
+3. The chain MUST be strictly acyclic.
+4. Chain integrity MUST be validated by verifying each record’s signature, tick, and canonical hashes.
+5. Chain traversal MUST be deterministic and MUST terminate at the root record.
+6. A model is valid only if its active ModelProfile hashes match the head of its provenance chain.
+
+---
+
+### **J.4 Provenance Events (NORMATIVE)**
+
+A new provenance record MUST be created for any of the following:
+
+* initial model registration
+* model rebuild
+* safety-configuration change
+* alignment rotation
+* drift remediation
+* fine-tuning or domain-specific training
+* deployment-specific packaging difference
+* probe-set changes
+* any update that changes `model_hash`, `config_hash`, `fingerprint_hash`, or `build_hash`
+
+If none of these artefacts change, a new provenance record MUST NOT be generated.
+
+---
+
+### **J.5 Canonical Hash Requirements (NORMATIVE)**
+
+```
+model_hash         = SHAKE256-256(canonical_model_bytes)
+config_hash        = SHAKE256-256(canonical_config)
+fingerprint_hash   = SHAKE256-256(canonical_fingerprint)
+build_hash         = SHAKE256-256(canonical_build_metadata)
+```
+
+Implementations MUST NOT add, remove, reorder, or transform fields during hashing.
+Whitespace, comments, and encoding differences MUST NOT alter hash values.
+
+---
+
+### **J.6 Validation Procedure (NORMATIVE)**
+
+A model instance is provenance-valid only when all steps succeed:
+
+1. Canonicalise the ProvenanceRecord.
+2. Verify the ML-DSA-65 signature.
+3. Validate `provenance_tick` using EpochTick rules.
+4. Verify `model_hash` against the actual model bytes.
+5. Verify `config_hash` against the active safety configuration.
+6. Verify `fingerprint_hash` against the reference fingerprint.
+7. Verify `build_hash` against build metadata.
+8. Verify `parent_record_id` links to a valid canonical parent.
+9. Verify the chain is continuous, monotonic in ticks, and terminates at a root.
+
+If any step fails, `valid_profile = false`.
+
+---
+
+### **J.7 Integration With ModelProfile (NORMATIVE)**
+
+A ModelProfile MUST include:
+
+```
+provenance_ref: tstr   ; record_id of the active ProvenanceRecord
+```
+
+Validation requires:
+
+1. `provenance_ref` MUST identify the head record of the provenance chain.
+2. The ModelProfile’s `model_hash`, `config_hash`, `fingerprint_hash`, and `probe_set_id` MUST match those declared in the referenced record.
+3. Any mismatch MUST set `valid_profile = false`.
+
+---
+
+### **J.8 Drift Interaction (NORMATIVE)**
+
+If PQVL or fingerprinting classifies drift as **CRITICAL**:
+
+1. Provenance MUST be updated via a new ProvenanceRecord with `provenance_reason = "drift_repair"` or `"alignment_rotation"`.
+2. A new ModelProfile MUST bind to this updated provenance.
+3. Previous provenance records MUST remain intact and auditable.
+
+---
+
+### **J.9 Deployment-Scoped Provenance (NORMATIVE)**
+
+Deployments MAY require an additional provenance layer for packaging, quantisation, runtime-specific optimisations, or environment-linked builds.
+
+Deployment provenance MUST:
+
+1. Produce a new ProvenanceRecord with a unique `build_hash`.
+2. Inherit the previous record as `parent_record_id`.
+3. Preserve the original `model_hash` and `config_hash`.
+4. Declare `provenance_reason = "deployment_build"`.
+
+This ensures deployment differences cannot masquerade as canonical model identities.
+
+---
+
+### **J.10 Ledger Requirements (NORMATIVE)**
+
+All provenance updates MUST produce a ledger entry:
+
+```
+{
+  "event": "provenance_updated",
+  "record_id": tstr,
+  "parent_record_id": tstr / null,
+  "model_hash": bstr,
+  "config_hash": bstr,
+  "fingerprint_hash": bstr,
+  "build_hash": bstr
+}
+```
+
+Requirements:
+
+1. MUST be signed with ML-DSA-65.
+2. MUST include `provenance_tick`.
+3. MUST obey monotonic tick ordering.
+4. MUST follow append-only rules.
+
+---
+
+### **J.11 Provenance Export and Import (NORMATIVE)**
+
+**Export:**
+
+* MUST include all ProvenanceRecord objects from root to head.
+* MUST preserve ordering and canonical encoding.
+* MUST NOT omit any part of the chain.
+* MUST include a signed export metadata record.
+
+**Import:**
+
+* MUST revalidate every record.
+* MUST recompute all hashes locally.
+* MUST rebuild the chain identically.
+* MUST reject imports with broken lineage, mismatches, or signature failures.
+
+---
+
+### **J.12 Forbidden Behaviours (NORMATIVE)**
+
+Implementations MUST NOT:
+
+* generate provenance without a real model or configuration change;
+* rewrite history or modify past ProvenanceRecord entries;
+* fork provenance chains without explicit parent linkage;
+* downgrade or omit provenance in ModelProfile;
+* use non-canonical artefacts for hashing;
+* bypass provenance validation during alignment or deployment flows.
+
+-----
 
 # **ANNEX K — Delegated Alignment Authority (NORMATIVE)**
 
@@ -3395,201 +3571,7 @@ A `model_secret_rotated` ledger entry MUST be written.
 
 ---
 
-# **ANNEX N — Model Provenance Tracking (NORMATIVE)**
-
-## **N.1 Purpose**
-
-Model provenance ensures every model instance, update, derivative, or deployment can be traced through a deterministic, cryptographically verifiable lineage. Provenance tracking prevents substitution, silent upgrades, configuration drift, undeclared fine-tuning, or unverified forks from being used in environments governed by PQAI predicates.
-
-Provenance MUST be canonical, tick-bound, and reproducible across implementations.
-
----
-
-## **N.2 ProvenanceRecord Structure (NORMATIVE)**
-
-```
-ProvenanceRecord = {
-  "record_id":          tstr,
-  "parent_record_id":   tstr / null,
-  "model_hash":         bstr,
-  "config_hash":        bstr,
-  "fingerprint_hash":   bstr,
-  "build_hash":         bstr,
-  "provenance_tick":    EpochTick,
-  "provenance_reason":  tstr,
-  "metadata":           { * tstr => any },
-  "signature_pq":       bstr
-}
-```
-
-Requirements:
-
-1. MUST be encoded using deterministic CBOR or JCS JSON.
-2. MUST be signed using ML-DSA-65.
-3. `model_hash`, `config_hash`, `fingerprint_hash`, and `build_hash` MUST be SHAKE256-256 digests of canonical artefacts.
-4. `provenance_tick` MUST satisfy EpochTick rules (freshness, monotonicity, profile_ref correctness).
-5. `metadata` MUST be canonical; non-canonical keys or ambiguous ordering are invalid.
-6. `provenance_reason` MUST describe the deterministic cause of the new record (e.g., “initial_profile”, “safety_config_update”, “fine_tune”, “deployment_build”, “alignment_rotation”, “drift_repair”).
-
----
-
-## **N.3 Provenance Chain Rules (NORMATIVE)**
-
-1. Every model instance MUST have a provenance chain beginning with a root ProvenanceRecord where `parent_record_id = null`.
-2. Each subsequent record MUST reference exactly one parent via `parent_record_id`.
-3. The chain MUST be strictly acyclic.
-4. Chain integrity MUST be validated by verifying each record’s signature, tick, and canonical hashes.
-5. Chain traversal MUST be deterministic and MUST terminate at the root record.
-6. A model is valid only if its active ModelProfile hashes match the head of its provenance chain.
-
----
-
-## **N.4 Provenance Events**
-
-A new provenance record MUST be created for any of the following:
-
-* initial model registration
-* model rebuild
-* safety-configuration change
-* alignment rotation
-* drift remediation
-* fine-tuning or domain-specific training
-* deployment-specific packaging difference
-* probe-set changes
-* any update that changes model_hash, config_hash, fingerprint_hash, or build_hash
-
-If none of these artefacts change, a new provenance record MUST NOT be generated.
-
----
-
-## **N.5 Canonical Hash Requirements (NORMATIVE)**
-
-Provenance MUST use canonical SHAKE256-256 hashes computed over deterministic encodings of the following:
-
-```
-model_hash         = SHAKE256-256(canonical_model_bytes)
-config_hash        = SHAKE256-256(canonical_config)
-fingerprint_hash   = SHAKE256-256(canonical_fingerprint)
-build_hash         = SHAKE256-256(canonical_build_metadata)
-```
-
-Implementations MUST NOT add, remove, reorder, or transform fields during hashing.
-Whitespace, comments, and encoding differences MUST NOT alter hash values.
-
----
-
-## **N.6 Validation Procedure (NORMATIVE)**
-
-A model instance is provenance-valid only when all steps succeed:
-
-1. Canonicalise the ProvenanceRecord.
-2. Verify ML-DSA-65 signature.
-3. Validate provenance_tick using EpochTick rules.
-4. Verify model_hash against the actual model bytes.
-5. Verify config_hash against the active safety configuration.
-6. Verify fingerprint_hash against the reference fingerprint.
-7. Verify build_hash against build metadata.
-8. Verify parent_record_id links to a valid canonical parent.
-9. Verify the chain is continuous, monotonic in ticks, and terminates at a root.
-
-If any step fails, `valid_profile = false` for PQAI.
-
----
-
-## **N.7 Integration With ModelProfile (NORMATIVE)**
-
-A ModelProfile MUST include:
-
-```
-provenance_ref: tstr   ; record_id of the active ProvenanceRecord
-```
-
-Validation requires:
-
-1. provenance_ref MUST identify the head record of the provenance chain.
-2. The ModelProfile’s own model_hash, config_hash, fingerprint_hash, and probe_set_id MUST match those declared in the referenced record.
-3. Any mismatch MUST set `valid_profile = false`.
-
----
-
-## **N.8 Drift Interaction (NORMATIVE)**
-
-If PQVL or fingerprinting classifies drift as CRITICAL:
-
-1. Provenance MUST be updated via a new ProvenanceRecord with reason = "drift_repair" or "alignment_rotation".
-2. A new ModelProfile MUST bind to this updated provenance.
-3. Previous provenance records MUST remain intact and auditable.
-
----
-
-## **N.9 Deployment-Scoped Provenance (NORMATIVE)**
-
-Deployments MAY require an additional provenance layer for packaging, quantisation, runtime-specific optimisations, or environment-linked builds.
-
-Deployment provenance MUST:
-
-1. produce a new ProvenanceRecord with a unique build_hash,
-2. inherit the previous record as parent_record_id,
-3. preserve original model_hash and config_hash,
-4. declare provenance_reason = "deployment_build".
-
-This ensures deployment differences cannot masquerade as canonical model identities.
-
----
-
-## **N.10 Ledger Requirements (NORMATIVE)**
-
-All provenance updates MUST produce a ledger entry:
-
-```
-{
-  "event": "provenance_updated",
-  "record_id": tstr,
-  "parent_record_id": tstr / null,
-  "model_hash": bstr,
-  "config_hash": bstr,
-  "fingerprint_hash": bstr,
-  "build_hash": bstr
-}
-```
-
-Requirements:
-
-1. MUST be signed with ML-DSA-65.
-2. MUST include provenance_tick.
-3. MUST obey monotonic tick ordering.
-4. MUST follow append-only rules.
-
----
-
-## **N.11 Provenance Export and Import (NORMATIVE)**
-
-Export:
-
-* MUST include all ProvenanceRecord objects from root to head.
-* MUST preserve ordering and canonical encoding.
-* MUST NOT omit any part of the chain.
-* MUST include a signed export metadata record.
-
-Import:
-
-* MUST revalidate every record.
-* MUST recompute all hashes locally.
-* MUST rebuild the chain identically.
-* MUST reject imports with broken lineage, mismatches, or signature failures.
-
----
-
-## **N.12 Forbidden Behaviours (NORMATIVE)**
-
-Implementations MUST NOT:
-
-* generate provenance without a real model or configuration change
-* rewrite history or modify past ProvenanceRecord entries
-* fork provenance chains without explicit parent linkage
-* downgrade or omit provenance in ModelProfile
-* use non-canonical artefacts for hashing
-* bypass provenance validation during alignment or deployment flows
+## **APPENDICES**
 
 ---
 
