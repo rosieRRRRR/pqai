@@ -4,8 +4,8 @@
 * **Status:** Implementation Ready
 * **Date:** 2026
 * **Author:** rosiea
-* **Licence:** Apache License 2.0
-
+* * **Contact:** [PQRosie@proton.me](mailto:PQRosie@proton.me)
+* **Licence:** Apache License 2.0 — Copyright 2025 rosiea
 ---
 
 ## Summary
