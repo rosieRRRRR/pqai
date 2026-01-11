@@ -174,8 +174,10 @@ PQAI defines artefact structure and validation rules only. PQAI does not define 
 |---------------|-----------------|---------|
 | PQSEC | ≥ 2.0.1 | Enforcement of AI admission predicates |
 | PQSF | ≥ 2.0.2 | Canonical encoding for all AI artefacts |
-| Epoch Clock | ≥ 2.1.1 | Time-bounded identity and consent artefacts |
+| Epoch Clock | ≥ 2.0.0 | Time-bounded identity and consent artefacts |
 | PQVL | ≥ 1.0.3 | Runtime cross-binding (optional) |
+
+Implementations MAY evaluate using earlier versions, but MUST NOT claim conformance while below the stated minimums.
 
 PQAI defines AI identity and behavioural artefacts only. All enforcement is performed by PQSEC.
 
