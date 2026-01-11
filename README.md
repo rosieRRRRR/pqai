@@ -347,6 +347,18 @@ enforcement decisions.
 All admission, escalation, and refusal semantics remain the exclusive
 responsibility of consuming enforcement specifications.
 
+### 8.6 Probe Set Governance
+
+Probe sets used for behavioural fingerprinting MUST be immutable once published under a given probe_set_id (or equivalent probe set identity).
+
+Updates:
+- New probe sets MUST be released under a new identifier.
+- Updates MUST be signed by the relevant authority defined by the deployment.
+- Rationale for probe set changes SHOULD be published in release notes.
+
+In-place modification of an existing probe set identity is forbidden.
+This preserves auditability and comparability of behavioural fingerprints.
+
 ---
 
 ## 9. Drift Detection
