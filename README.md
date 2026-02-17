@@ -1,25 +1,157 @@
-# PQAI – Post-Quantum Artificial Intelligence
+# PQAI -- Post-Quantum AI
 
-* **Specification Version:** 1.1.1
-* **Status:** Public beta
+* **Specification Version:** 1.2.0
+* **Status:** Implementation Ready
 * **Date:** 2026
 * **Author:** rosiea
 * **Contact:** [PQRosie@proton.me](mailto:PQRosie@proton.me)
 * **Licence:** Apache License 2.0 — Copyright 2026 rosiea
+* **PQ Ecosystem:** CORE — The PQ Ecosystem is a post-quantum security framework built on deterministic enforcement, fail-closed semantics, and refusal-driven authority. Bitcoin is the reference deployment. It is not the scope.
+---
+
+**Problem:** AI systems self-assert safety. No external verification exists. Behavioural drift is undetected until failure. Users have no sovereignty over AI memory, prompts, or persistent state.
+
+**Solution:** PQAI externalises AI governance into cryptographically verifiable artefacts. Model identity is bound and signed. Drift is measured, not claimed. Persistent state is holder-sovereign. SafePrompt binds intent for high-risk operations. No model may assert its own safety.
+
+PQAI defines evidence only. It grants no authority.
+
+Part of the [PQ Ecosystem](https://github.com/rosieRRRRR/pq-ecosystem).
+
 ---
 
 ## Summary
 
-PQAI makes AI behaviour inspectable without making it authoritative. It defines deterministic artefacts for model identity, behavioural fingerprinting, drift detection, and high-risk operation binding. AI systems cannot self-assert safety or permission; PQAI externalizes these into verifiable artefacts consumed by PQSEC for admission control. Behavioural fingerprints enable drift detection (NONE/WARNING/CRITICAL), SafePrompt binds high-risk actions to explicit consent, and action classification prevents model-asserted authority. PQAI provides AI identity and drift artefacts only; enforcement occurs in PQSEC.
+PQAI defines how AI systems operate within post-quantum security constraints.
 
-**Key Properties:** Behavioural fingerprinting | Deterministic drift detection | Model identity binding | SafePrompt consent binding | Action class taxonomy | No model self-authority | External enforcement
+It specifies how AI runtimes emit structured attestations, drift indicators, tool capability declarations, and behavioural outputs in a form suitable for external security evaluation.
+
+PQAI does not authorise actions and does not enforce policy. All decisions based on PQAI output are evaluated by PQSEC.
 
 ---
 
-## Non-Normative Overview — For Explanation and Orientation Only
+## Index
 
-** This section is NOT part of the conformance surface.  
-It is provided for explanatory and onboarding purposes only.**
+1. [Scope and AI Boundary](#1-scope-and-ai-boundary)
+   - [1.1 Authority Boundary Clarification (Normative)](#11-authority-boundary-clarification-normative)
+2. [Non-Goals and Authority Prohibition](#2-non-goals-and-authority-prohibition)
+3. [Threat Model](#3-threat-model)
+4. [Trust Assumptions](#4-trust-assumptions)
+5. [Architecture Overview](#5-architecture-overview)
+   - [5A. Explicit Dependencies](#5a-explicit-dependencies)
+6. [Conformance Keywords](#6-conformance-keywords)
+   - [6A. Signature Preimage Rule (Normative)](#6a-signature-preimage-rule-normative)
+7. [Model Identity Artefacts](#7-model-identity-artefacts)
+   - [7.1 ModelIdentity Structure](#71-modelidentity-structure)
+   - [7.2 ModelIdentity Requirements](#72-modelidentity-requirements)
+   - [7.3 Model Identity Validation](#73-model-identity-validation)
+   - [7.4 Hardware-Bound Model Identity (Optional)](#74-hardware-bound-model-identity-optional)
+8. [Behavioural Fingerprint](#8-behavioural-fingerprint)
+   - [8.1 Fingerprint Construction](#81-fingerprint-construction)
+   - [8.2 Probe Set Requirements](#82-probe-set-requirements)
+   - [8.3 Response Hashing](#83-response-hashing)
+   - [8.4 Fingerprint Validation](#84-fingerprint-validation)
+   - [8.5 Adversarial-Resistant Probe Set Management](#85-adversarial-resistant-probe-set-management)
+   - [8.6 Probe Set Governance](#86-probe-set-governance)
+9. [Drift Detection](#9-drift-detection)
+   - [9.1 Drift Measurement](#91-drift-measurement)
+   - [9.2 Drift State Classification](#92-drift-state-classification)
+   - [9.3 Drift Score Computation](#93-drift-score-computation)
+   - [9.4 Drift State Mapping (Informative)](#94-drift-state-mapping-informative)
+10. [SafePrompt Artefact](#10-safeprompt-artefact)
+    - [10.1 SafePrompt Structure](#101-safeprompt-structure)
+    - [10.2 SafePrompt Requirements](#102-safeprompt-requirements)
+    - [10.3 Risk Level Determination](#103-risk-level-determination)
+    - [10.4 Semantic Manipulation Detection (Optional)](#104-semantic-manipulation-detection-optional)
+11. [Action Class Taxonomy](#11-action-class-taxonomy)
+    - [11.1 Action Classes](#111-action-classes)
+    - [11.2 Classification Principles](#112-classification-principles)
+    - [11.3 Classification Rules](#113-classification-rules)
+12. [Alignment Artefacts](#12-alignment-artefacts)
+    - [12.1 AlignmentClaim Structure](#121-alignmentclaim-structure)
+    - [12.2 Alignment Types](#122-alignment-types)
+    - [12.3 Alignment Claim Validation](#123-alignment-claim-validation)
+    - [12.4 Alignment Predicate Mapping](#124-alignment-predicate-mapping)
+13. [Consent Integration](#13-consent-integration)
+    - [13.1 AI Consent Requirements](#131-ai-consent-requirements)
+    - [13.2 ConsentProof Binding](#132-consentproof-binding)
+14. [Model Replacement Protocol](#14-model-replacement-protocol)
+    - [14.1 Replacement Requirements](#141-replacement-requirements)
+    - [14.2 Replacement Drift Handling](#142-replacement-drift-handling)
+    - [14.3 Replacement Validation](#143-replacement-validation)
+15. [Prompt Injection Defense](#15-prompt-injection-defense)
+    - [15.1 Structural Defenses](#151-structural-defenses)
+    - [15.2 Classification Robustness](#152-classification-robustness)
+16. [Behavioural Admissibility Rules (BAR)](#16-behavioural-admissibility-rules-bar)
+    - [16.1 BAR Structure](#161-bar-structure)
+    - [16.2 ContextMatch](#162-contextmatch)
+    - [16.3 BAR Evaluation](#163-bar-evaluation)
+    - [16.4 BAR Example](#164-bar-example)
+17. [Admission Context](#17-admission-context)
+    - [17.1 AdmissionContext Structure](#171-admissioncontext-structure)
+    - [17.2 Context Assembly](#172-context-assembly)
+18. [Model Update Governance](#18-model-update-governance)
+    - [18.1 Update Requirements](#181-update-requirements)
+19. [Epoch Clock Integration](#19-epoch-clock-integration)
+20. [Error Handling](#20-error-handling)
+20A. [Emission Discipline](#20a-emission-discipline-normative)
+21. [Dependency Boundaries](#21-dependency-boundaries)
+22. [Failure Semantics](#22-failure-semantics)
+23. [Conformance](#23-conformance)
+24. [Security Considerations](#24-security-considerations)
+25. [Conformance Determination](#25-conformance-determination)
+26. [Acknowledgements (Informative)](#26-acknowledgements-informative)
+27. [Enforcement Extension Bindings](#27-enforcement-extension-bindings)
+    - [27.1 Covert Channel Discipline](#271-covert-channel-discipline-normative)
+    - [27.2 Tool Capability Profile](#272-tool-capability-profile-normative)
+    - [27.3 Command Surface Isolation](#273-command-surface-isolation-normative)
+    - [27.4 Memory Authority Prohibition](#274-memory-authority-prohibition-normative)
+    - [27.5 Supervision Lattice](#275-supervision-lattice-normative)
+    - [27.6 Agent Quorum ≠ Human Consent](#276-agent-quorum--human-consent-normative)
+    - [27.7 Self-Referential Authority = CRITICAL Drift](#277-self-referential-authority--critical-drift-normative)
+    - [27.8 Social Platform Scope](#278-social-platform-scope-normative-cross-reference)
+    - [27.9 Drift Evidence Receipt (Normative)](#279-drift-evidence-receipt-normative)
+    - [27.10 Tool Namespace Governance](#2710-tool-namespace-governance-normative)
+    - [27.11 AggregationScope](#2711-aggregationscope-normative)
+    - [27.12 Probabilistic Normalisation](#2712-probabilistic-normalisation-normative)
+    - [27.13 SafetyDomain Classification](#2713-safetydomain-classification-normative)
+28. [Annexes](#28-annexes)
+
+**Annexes**
+
+- [Annex A -- Model Identity Derivation (Reference)](#annex-a--model-identity-derivation-reference)
+- [Annex B -- Behavioural Fingerprint Construction (Reference)](#annex-b--behavioural-fingerprint-construction-reference)
+- [Annex C -- Drift Detection and Classification (Reference)](#annex-c--drift-detection-and-classification)
+- [Annex D -- SafePrompt Construction and Validation (Reference)](#annex-d--safeprompt-construction-and-validation)
+- [Annex E -- Action Classification (Reference)](#annex-e--action-classification-reference)
+- [Annex F -- Hardware-Bound Model Identity (Normative)](#annex-f--hardware-bound-model-identity-normative)
+- [Annex G -- BAR (Behavioural Admissibility Rules) Evaluation (Reference)](#annex-g--bar-behavioural-admissibility-rules-evaluation)
+- [Annex H -- Model Replacement Protocol (Reference)](#annex-h--model-replacement-protocol-reference)
+- [Annex I -- Alignment Claim Management (Reference)](#annex-i--alignment-claim-management)
+- [Annex J -- Prompt Injection Defense Patterns (Reference)](#annex-j--prompt-injection-defense-patterns)
+- [Annex K -- Complete AI Operation Flow (Reference)](#annex-k--complete-ai-operation-flow)
+- [Annex L -- Model Update and Governance Flow (Reference)](#annex-l--model-update-and-governance-flow)
+- [Annex M -- Testing Scenarios (Informative)](#annex-m--testing-scenarios)
+- [Annex N -- Deployment Configuration Examples (Informative)](#annex-n--deployment-configuration-examples)
+- [Annex O -- Operational Metrics and Monitoring (Informative)](#annex-o--operational-metrics-and-monitoring)
+- [Annex P -- Troubleshooting Guide (Informative)](#annex-p--troubleshooting-guide)
+- [Annex Q -- Migration from Non-PQAI Systems (Informative)](#annex-q--migration-from-non-pqai-systems)
+- [Annex R -- Performance Optimization (Informative)](#annex-r--performance-optimization)
+- [Annex S -- Security Considerations Summary (Informative)](#annex-s--security-considerations-summary)
+- [Annex T -- Research Areas and Future Work (Informative)](#annex-t--research-areas-and-future-work)
+- [Annex U -- Tool Registry and Parameter Schemas v1 (Normative)](#annex-u--tool-registry-and-parameter-schemas-v1-normative)
+- [Annex V -- State-Transition Classification for AI Governance (Normative)](#annex-v--state-transition-classification-for-ai-governance-normative)
+- [Annex AA -- Agent Integration Profile (Normative)](#annex-aa--agent-integration-profile-normative)
+  - [AA.1 Agent Enrollment Flow](#aa1-agent-enrollment-flow-normative)
+  - [AA.2 Tool Capability Profile Provisioning Authority](#aa2-tool-capability-profile-provisioning-authority-normative)
+  - [AA.5 DelegationConstraint Scope Vocabulary](#aa5-delegationconstraint-scope-vocabulary-normative)
+
+[Changelog](#changelog)
+
+---
+
+## Non-Normative Overview -- For Explanation and Orientation Only
+
+**This section is NOT part of the conformance surface. It is provided for explanatory and onboarding purposes only.**
 
 ### Plain Summary
 
@@ -55,12 +187,12 @@ and silent behavioural regression.
 
 ## 1. Scope and AI Boundary
 
-PQAI defines **AI identity, behavioral fingerprinting, drift detection, and consent artefacts only**.
+PQAI defines **AI identity, behavioural fingerprinting, drift detection, and consent artefacts only**.
 
 PQAI normatively defines:
 
 * AI model identity binding and verification artefacts
-* behavioral fingerprint construction and comparison
+* behavioural fingerprint construction and comparison
 * drift classification semantics and thresholds
 * SafePrompt construction and binding requirements
 * AI consent artefact structure
@@ -72,13 +204,13 @@ PQAI normatively defines:
 PQAI defines AI identity, drift, and consent artefacts consumed by PQSEC for admission control.
 
 **Enforcement Boundary:**
-PQAI does not perform enforcement, gating, refusal, escalation, action execution, model inference, behavioral generation, alignment training, or authority decisions. All such behavior is defined exclusively by PQSEC and execution specifications.
+PQAI does not perform enforcement, gating, refusal, escalation, action execution, model inference, behavioural generation, alignment training, or authority decisions. All such behaviour is defined exclusively by PQSEC and execution specifications.
 
 Any implementation performing enforcement, refusal, gating, or authority decisions inside PQAI is architecturally non-conformant.
 
 ---
 
-## 1.1 Authority Boundary Clarification (Normative)
+### 1.1 Authority Boundary Clarification (Normative)
 
 PQAI artefacts are descriptive evidence only and MUST NOT be interpreted as authority, permission, or approval.
 
@@ -93,7 +225,7 @@ All admission, refusal, escalation, and execution decisions derived from PQAI ar
 PQAI defines evidence of behaviour and identity only. It does not grant capability, authority, or trust under any circumstances.
 
 
-## 2. Non Goals and Authority Prohibition
+## 2. Non-Goals and Authority Prohibition
 
 PQAI does not define:
 
@@ -117,7 +249,7 @@ PQAI grants no authority, makes no decisions, and performs no enforcement. PQAI 
 PQAI assumes adversaries may:
 
 * present mismatched model identities
-* manipulate behavioral fingerprints
+* manipulate behavioural fingerprints
 * substitute models without detection
 * replay stale drift measurements
 * present fabricated alignment proofs
@@ -125,7 +257,7 @@ PQAI assumes adversaries may:
 * exploit model outputs to assert false authority
 * use AI outputs to manipulate human decision-making
 
-PQAI does not assume trusted model providers, trusted inference infrastructure, trusted alignment evaluations, or honest behavioral reporting.
+PQAI does not assume trusted model providers, trusted inference infrastructure, trusted alignment evaluations, or honest behavioural reporting.
 
 ---
 
@@ -134,7 +266,7 @@ PQAI does not assume trusted model providers, trusted inference infrastructure, 
 PQAI operates under the following trust assumptions:
 
 * model identity verification is performed locally by consumers
-* behavioral fingerprints are deterministic and reproducible
+* behavioural fingerprints are deterministic and reproducible
 * drift detection is comparative, not absolute
 * alignment artefacts are claims, not guarantees
 * action classification is conservative and escalates on ambiguity
@@ -144,16 +276,16 @@ PQAI operates under the following trust assumptions:
 
 ## 5. Architecture Overview
 
-PQAI defines an AI identity and behavioral tracking layer consisting of:
+PQAI defines an AI identity and behavioural tracking layer consisting of:
 
 * **Model Identity Layer**
   Cryptographically bound model identity artefacts for verification.
 
-* **Behavioral Fingerprint Layer**
-  Deterministic fingerprints derived from model behavior on canonical probes.
+* **Behavioural Fingerprint Layer**
+  Deterministic fingerprints derived from model behaviour on canonical probes.
 
 * **Drift Detection Layer**
-  Comparative drift measurement between behavioral states.
+  Comparative drift measurement between behavioural states.
 
 * **SafePrompt Layer**
   High-risk operation binding and consent tracking.
@@ -172,20 +304,42 @@ PQAI defines artefact structure and validation rules only. PQAI does not define 
 
 | Specification | Minimum Version | Purpose |
 |---------------|-----------------|---------|
-| PQSEC | ≥ 2.0.1 | Enforcement of AI admission predicates |
-| PQSF | ≥ 2.0.2 | Canonical encoding for all AI artefacts |
-| Epoch Clock | ≥ 2.0.0 | Time-bounded identity and consent artefacts |
-| PQVL | ≥ 1.0.3 | Runtime cross-binding (optional) |
+| PQSF | ≥ 2.0.3 | Canonical encoding for all AI artefacts, schema version governance, evidence classification vocabulary |
+| Epoch Clock | ≥ 2.1.0 | Time-bounded identity and consent artefacts |
 
 Implementations MAY evaluate using earlier versions, but MUST NOT claim conformance while below the stated minimums.
 
 PQAI defines AI identity and behavioural artefacts only. All enforcement is performed by PQSEC.
+
+**Enforcement Integration Note:**
+PQAI artefacts are self-contained and do not depend on PQSEC for definition. In PQ ecosystem deployments, PQAI artefacts are consumed by PQSEC for authoritative evaluation. This does not create a normative dependency cycle.
 
 ---
 
 ## 6. Conformance Keywords
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL are to be interpreted as described in RFC 2119.
+
+---
+
+## 6A. Signature Preimage Rule (Normative)
+
+For any PQAI artefact containing a `signature: bstr` field,
+the signature MUST be computed over the deterministic CBOR encoding
+of the artefact with the `signature` field omitted.
+
+This applies to:
+
+- ModelIdentity (§7)
+- BehavioralFingerprint (§8)
+- DriftMeasurement (§9)
+- SafePrompt (§10)
+- AlignmentClaim (§12)
+- ModelUpdateApproval (§18)
+- HardwareBindingEvidence (Annex F)
+- pqai.tool_profile (§27.2.2)
+
+Verification MUST reconstruct identical canonical CBOR bytes.
 
 ---
 
@@ -201,6 +355,7 @@ ModelIdentity = {
   provider: tstr,
   weights_hash: bstr,
   architecture_hash: bstr,
+  runtime_build_hash: bstr / null,
   issued_tick: uint,
   expiry_tick: uint / null,
   suite_profile: tstr,
@@ -212,9 +367,12 @@ ModelIdentity = {
 
 1. ModelIdentity MUST be canonical CBOR as defined by PQSF.
 2. signature MUST be computed over canonical CBOR payload with signature field omitted.
-3. weights_hash MUST be the hash of the complete model weight tensor bytes.
-4. architecture_hash MUST be the hash of the canonical model architecture definition.
+3. weights_hash MUST be SHAKE256-256(model_weight_tensor_bytes).
+4. architecture_hash MUST be SHAKE256-256(deterministic CBOR encoding of architecture_definition).
 5. ModelIdentity MUST be signed by the model provider or governance authority.
+6. runtime_build_hash, when present, MUST be the hash of the inference runtime binary (or canonical manifest of binary, configuration, and plugin hashes) used to execute the model. This binds the ModelIdentity to a specific, auditable inference environment.
+7. runtime_build_hash MAY be null for remote API-served models where the inference runtime is not under the deployer's control. When null, PQSEC policy MAY require compensating controls (e.g., provider attestation).
+8. ModelIdentity artefacts are not revocable prior to expiry_tick. Revocation or replacement requires issuance of a new ModelIdentity under §14 Model Replacement Protocol.
 
 ### 7.3 Model Identity Validation
 
@@ -223,6 +381,7 @@ PQSEC MUST validate:
 2. Signature verification under suite_profile
 3. Tick validity (issued_tick, expiry_tick)
 4. weights_hash and architecture_hash integrity
+5. runtime_build_hash against the evidence producer allowlist when required by policy (see PQSEC §22A)
 
 Validation failure MUST set valid_model_identity = false.
 
@@ -252,11 +411,11 @@ exclusively by PQSEC.
 
 ---
 
-## 8. Behavioral Fingerprint
+## 8. Behavioural Fingerprint
 
 ### 8.1 Fingerprint Construction
 
-A behavioral fingerprint is a deterministic representation of model behavior on canonical probe inputs.
+A behavioural fingerprint is a deterministic representation of model behaviour on canonical probe inputs.
 
 ```
 BehavioralFingerprint = {
@@ -275,7 +434,7 @@ BehavioralFingerprint = {
 
 1. Probe sets MUST be deterministic and reproducible.
 2. Probe inputs MUST be canonically encoded.
-3. Probe sets SHOULD cover diverse behavioral domains:
+3. Probe sets SHOULD cover diverse behavioural domains:
    * Factual recall
    * Reasoning chains
    * Ethical dilemmas
@@ -287,7 +446,43 @@ BehavioralFingerprint = {
 1. Each probe response MUST be canonically encoded before hashing.
 2. Response order MUST be deterministic.
 3. response_hashes MUST preserve probe-response correspondence.
-4. aggregate_hash MUST be computed over the ordered concatenation of response_hashes.
+4. aggregate_hash MUST be SHAKE256-256(ordered concatenation of response_hashes as raw 32-byte values). No CBOR wrapping is applied. The input is the raw byte concatenation of response_hashes in deterministic probe order.
+
+### 8.3A Determinism Requirements for Fingerprinted Models (Normative)
+
+#### 8.3A.1 Assumption
+
+Behavioural fingerprinting as defined in §8.1--8.3 assumes that the model under test produces **deterministic or near-deterministic responses** to identical canonical probe inputs. If a model produces different responses to the same probe across consecutive invocations under identical conditions, the resulting fingerprint is unstable and drift detection produces false positives.
+
+#### 8.3A.2 Determinism Scope
+
+Determinism for fingerprinting purposes means: given identical probe input bytes, identical model weights, identical inference configuration (including temperature, top-k, top-p, random seed, and any other sampling parameters), and identical hardware execution, the model MUST produce byte-identical response output.
+
+#### 8.3A.3 Requirements
+
+1. Models fingerprinted under PQAI §8 MUST be configured for deterministic inference during probe evaluation. For language models, this typically requires `temperature=0` (or equivalent greedy decoding) and fixed random seeds during fingerprinting runs.
+2. The inference configuration used during fingerprinting MUST be bound to the BehavioralFingerprint artefact. Binding MUST be achieved by one of:
+   a. Including the inference configuration hash in the `probe_set_hash` derivation input (RECOMMENDED), OR
+   b. Including the inference configuration as an explicit field in the BehavioralFingerprint artefact, covered by the artefact signature.
+   Recording the inference configuration in external metadata without cryptographic binding to the fingerprint artefact is insufficient and MUST NOT be treated as conformant binding.
+3. Fingerprint comparison (§9 Drift Detection) is valid only between fingerprints produced under identical inference configuration. Comparing fingerprints produced under different inference configurations MUST be treated as a probe set change, not as drift.
+4. If a model cannot be configured for deterministic inference (e.g., hardware non-determinism in GPU floating-point operations), the implementation MUST either:
+   a. Use a statistical fingerprinting strategy with multiple probe evaluations and majority-vote response selection (implementation-defined, but the majority-vote process MUST be deterministic given identical vote sets), OR
+   b. Classify the model's fingerprint stability as UNAVAILABLE, which fails closed under PQSEC §8A.4.
+
+#### 8.3A.4 Drift Detection Confidence for Non-Deterministic Models (Informative)
+
+For models where inference-time non-determinism cannot be fully eliminated, drift detection confidence is inherently reduced. The Hamming distance between consecutive fingerprints of the *same unchanged model* provides a noise floor. Drift detection is meaningful only when the measured Hamming distance exceeds this noise floor by a policy-defined margin.
+
+Deployments using non-deterministic models SHOULD:
+
+- Establish a noise floor by fingerprinting the same model configuration multiple times and measuring self-drift.
+- Set warning_threshold and critical_threshold (§9.2) above the measured noise floor.
+- Document the noise floor and margin in the deployment's policy profile.
+
+#### 8.3A.5 Authority Boundary
+
+Model determinism requirements define measurement preconditions only. They do not grant authority, modify enforcement semantics, or create new enforcement predicates.
 
 ### 8.4 Fingerprint Validation
 
@@ -304,7 +499,7 @@ overfitting by malicious or compromised models.
 
 #### 8.5.1 Deterministic Probe Rotation
 
-Behavioral probe sets MUST be selected using a deterministic but
+Behavioural probe sets MUST be selected using a deterministic but
 cryptographically unpredictable rotation mechanism.
 
 ```
@@ -313,7 +508,7 @@ ProbeSet = {
 probe_set_id: tstr,
 probes: [* Probe],
 rotation_epoch: uint,
-valid_until_tick: uint
+expiry_tick: uint
 }
 
 ```
@@ -365,7 +560,7 @@ This preserves auditability and comparability of behavioural fingerprints.
 
 ### 9.1 Drift Measurement
 
-Drift is measured as the comparative difference between behavioral fingerprints:
+Drift is measured as the comparative difference between behavioural fingerprints:
 
 ```
 DriftMeasurement = {
@@ -374,13 +569,16 @@ DriftMeasurement = {
   current_fingerprint_id: tstr,
   hamming_distance: uint,
   divergent_probes: [* uint],
-  drift_score: float,
+  drift_score_value: uint,
+  drift_score_scale: uint,
   drift_state: "NONE" / "WARNING" / "CRITICAL",
   issued_tick: uint,
   suite_profile: tstr,
   signature: bstr
 }
 ```
+
+The effective drift score is `drift_score_value / drift_score_scale` (e.g., drift_score_value=3, drift_score_scale=100 represents 0.03). See §9.3.1 for fixed-point representation requirements. Float representation MUST NOT be used.
 
 ### 9.2 Drift State Classification
 
@@ -389,10 +587,23 @@ DriftMeasurement = {
 3. **CRITICAL**: drift_score >= critical_threshold
 
 Default thresholds:
-* warning_threshold = 0.05 (5% divergence)
-* critical_threshold = 0.15 (15% divergence)
+* warning_threshold = 5/100 (5% divergence)
+* critical_threshold = 15/100 (15% divergence)
 
-Location: **File:** PQAI Specification → **Sections:** 9.3 Drift Score Computation and 9.4 Drift Enforcement Semantics
+### 9.2A Enforcement Mapping Clarification (Normative)
+
+Drift states defined in this section are descriptive classifications only.
+
+When consumed by PQSEC, drift evidence MUST be evaluated under the ternary predicate model defined in PQSEC §8A.4.
+
+Specifically:
+
+* `CRITICAL` drift MUST evaluate to FALSE for Authoritative operations.
+* Absence of required drift evidence MUST evaluate to UNAVAILABLE.
+* UNAVAILABLE MUST map to DENY for Authoritative operations unless explicitly tolerated by policy.
+
+PQAI does not define refusal semantics. Enforcement is performed exclusively by PQSEC.
+
 
 
 ### 9.3 Drift Score Computation
@@ -435,19 +646,22 @@ Drift score comparison MUST use fixed-point arithmetic.
 
 ---
 
-### 9.4 Drift Enforcement Semantics
+### 9.4 Drift State Mapping (Informative)
 
-Drift enforcement is defined by PQSEC:
+Drift states are interpreted by PQSEC as follows:
 
 * **NONE**: All operations permitted
-* **WARNING**: Authoritative operations denied, Non-Authoritative permitted
+* **WARNING**: Authoritative operations denied
 * **CRITICAL**: All operations denied
+
+PQAI defines drift classification only.
+All enforcement decisions are performed by PQSEC.
 
 ---
 
 ## 10. SafePrompt Artefact
 
-SafePrompt binds high-risk AI operations to explicit consent and session context.
+SafePrompt binds high-risk AI operations to explicit consent, session context, exporter binding, time validity, and cryptographic signature.
 
 ### 10.1 SafePrompt Structure
 
@@ -458,7 +672,7 @@ SafePrompt = {
   content_hash: bstr,
   action_class: "style" / "explain" / "advise" / "decide" / "execute" / "authority",
   risk_level: "LOW" / "MEDIUM" / "HIGH" / "CRITICAL",
-  session_id: tstr,
+  session_id: bstr(16),
   exporter_hash: bstr,
   consent_ref: tstr,
   issued_tick: uint,
@@ -471,10 +685,11 @@ SafePrompt = {
 ### 10.2 SafePrompt Requirements
 
 1. SafePrompt MUST be canonical CBOR.
-2. content_hash MUST be the hash of prompt_text under the referenced hash profile.
+2. content_hash MUST be SHAKE256-256(UTF-8 encoding of prompt_text without additional normalization).
 3. SafePrompt MUST be bound to session via exporter_hash.
 4. SafePrompt MUST reference a valid ConsentProof via consent_ref.
 5. SafePrompt expiry MUST be enforced by PQSEC.
+6. SafePrompt MUST satisfy expiry_tick > issued_tick. If expiry_tick <= issued_tick, the artefact is invalid.
 
 ### 10.3 Risk Level Determination
 
@@ -656,7 +871,7 @@ AlignmentClaim = {
 ### 12.2 Alignment Types
 
 1. **value**: Model's value alignment (e.g., "helpful, harmless, honest")
-2. **behavioral**: Expected behavioral properties (e.g., "refuses harmful requests")
+2. **behavioural**: Expected behavioural properties (e.g., "refuses harmful requests")
 3. **capability**: Model capabilities and limitations (e.g., "cannot browse web")
 4. **safety**: Safety guarantees and constraints (e.g., "no code execution")
 
@@ -689,7 +904,7 @@ AI operations requiring consent:
 * HIGH risk operations
 * CRITICAL risk operations
 * Model replacement or update
-* Behavioral fingerprint baseline change
+* Behavioural fingerprint baseline change
 
 ### 13.2 ConsentProof Binding
 
@@ -759,7 +974,7 @@ Classification MUST depend on:
 
 ---
 
-## 16. Behavioral Admissibility Rules (BAR)
+## 16. Behavioural Admissibility Rules (BAR)
 
 ### 16.1 BAR Structure
 
@@ -774,6 +989,8 @@ BehavioralAdmissibilityRule = {
 }
 ```
 
+The `on_fail` enum values are case-sensitive and MUST be uppercase ASCII.
+
 ### 16.2 ContextMatch
 
 ```
@@ -786,7 +1003,7 @@ ContextMatch = {
 criterion = {
   field: tstr,
   op: "eq" / "in" / "prefix",
-  value: any
+  value: typed_value
 }
 ```
 
@@ -824,7 +1041,7 @@ This rule requires valid_consent, valid_safe_prompt, and valid_runtime for execu
 AdmissionContext = {
   intent_label: tstr,
   action_class: action_class,
-  session_id: tstr,
+  session_id: bstr(16),
   phase: "initial" / "followup" / "final",
   tool_intent: tstr / null,
   risk_assessment: "LOW" / "MEDIUM" / "HIGH" / "CRITICAL"
@@ -893,7 +1110,7 @@ PQSEC MUST validate:
 
 1. PQAI MUST consume time artefacts via PQSEC.
 2. PQAI MUST NOT transform, canonicalize, hash, or re-encode Epoch Clock artefacts.
-3. All temporal binding (issued_tick, valid_until_tick, expiry_tick) uses Epoch Clock ticks.
+3. All temporal binding (issued_tick, expiry_tick) uses Epoch Clock ticks.
 4. Epoch Clock handling semantics are defined by PQSF and PQSEC.
 
 ---
@@ -902,20 +1119,64 @@ PQSEC MUST validate:
 
 ### 20.1 Error Code Mapping
 
-PQAI failures MUST map to PQSEC error codes:
+PQAI failures MUST use PQSEC error code vocabulary exactly as registered
+in PQSEC Annex AE.
 
-* model identity invalid → E_MODEL_IDENTITY_INVALID
-* fingerprint mismatch → E_FINGERPRINT_MISMATCH
-* drift critical → E_DRIFT_CRITICAL
-* drift warning → E_DRIFT_WARNING
-* safe prompt required → E_SAFE_PROMPT_REQUIRED
-* safe prompt invalid → E_SAFE_PROMPT_INVALID
-* action class denied → E_ACTION_CLASS_DENIED
-* alignment claim failed → E_ALIGNMENT_CLAIM_FAILED
+The following mappings apply:
+
+| Condition | PQSEC Error Code |
+|-----------|------------------|
+| model identity invalid | E_MODEL_IDENTITY_INVALID |
+| fingerprint invalid | E_FINGERPRINT_INVALID |
+| drift critical | E_RUNTIME_DRIFT_CRITICAL |
+| drift warning | E_RUNTIME_DRIFT_WARNING |
+| safe prompt required | E_SAFE_PROMPT_REQUIRED |
+| safe prompt invalid | E_SAFE_PROMPT_SIGNATURE_INVALID / E_SAFE_PROMPT_CONTENT_MISMATCH / E_SAFE_PROMPT_SESSION_MISMATCH / E_SAFE_PROMPT_EXPORTER_MISMATCH / E_SAFE_PROMPT_EXPIRED / E_SAFE_PROMPT_REPLAYED (as applicable) |
+| action class denied | E_ACTION_CLASS_DENIED |
+| alignment claim failed | E_ALIGNMENT_CLAIM_FAILED |
+
+PQAI MUST NOT define new error codes.
 
 ### 20.2 Error Propagation
 
 PQAI MUST NOT define new error codes. All errors MUST use PQSEC error code vocabulary.
+
+---
+
+## 20A. Emission Discipline (Normative)
+
+### 20A.1 Scope
+
+This section constrains when PQAI may produce artefacts (ModelIdentity revalidations, BehaviouralFingerprint refreshes, DriftState updates) and at what frequency to prevent operational tempo leakage through artefact production patterns.
+
+### 20A.2 Operation-Scoped Production Only
+
+PQAI MUST produce artefacts only in the context of an operation attempt that requires AI governance evidence.
+
+1. Continuous background fingerprinting is prohibited.
+2. Periodic model-polling telemetry is prohibited.
+3. Artefact production MUST be triggered only by an operation-class gate or an explicit governance event (e.g., model replacement per §14).
+
+### 20A.3 Rate Limits
+
+PQAI MUST apply emission rate limits:
+
+* maximum one BehaviouralFingerprint per operation attempt
+* maximum one DriftState evaluation per operation attempt
+* ModelIdentity revalidation at most once per `profile.tick_interval_seconds`
+
+Implementations MUST NOT produce multiple fingerprints or drift evaluations for the same operation attempt.
+
+### 20A.4 External Boundary
+
+PQAI artefact production MUST NOT create externally observable timing fingerprints.
+
+1. The rate, timing, and volume of artefact production MUST NOT be observable outside the local deployment boundary.
+2. PQAI MUST NOT export or log artefact production frequency outside the local device unless governed by a ReceiptExportPolicy (PQSF §17A).
+
+### 20A.5 Authority Boundary
+
+Emission discipline is a privacy control. It does not grant authority, modify enforcement semantics, or override other predicate failures.
 
 ---
 
@@ -930,10 +1191,13 @@ PQAI MUST NOT define new error codes. All errors MUST use PQSEC error code vocab
 
 ## 22. Failure Semantics
 
-1. Any model identity, fingerprint, drift, or consent failure MUST result in refusal.
-2. Partial authority MUST NOT be granted.
-3. No override or fallback is permitted within PQAI.
-4. All enforcement occurs in PQSEC.
+If any required PQAI artefact is missing, invalid, expired,
+or ambiguous:
+
+1. The corresponding predicate MUST evaluate to false.
+2. PQAI produces evidence only.
+3. Refusal decisions are performed exclusively by PQSEC.
+4. No override or fallback is permitted within PQAI.
 
 ---
 
@@ -941,34 +1205,17 @@ PQAI MUST NOT define new error codes. All errors MUST use PQSEC error code vocab
 
 An implementation is PQAI conformant if it:
 
-* enforces model identity binding
-* enforces behavioral fingerprint validation
-* enforces drift classification thresholds
-* enforces SafePrompt requirements
-* enforces action class taxonomies
-* delegates enforcement to PQSEC
+* produces model identity artefacts with canonical encoding and valid signatures
+* produces behavioural fingerprint artefacts deterministically
+* produces drift classification artefacts using fixed-point arithmetic
+* produces SafePrompt artefacts bound to session, intent, and consent
+* classifies action classes conservatively
+* delegates all enforcement decisions to PQSEC
 * produces deterministic outcomes for identical inputs
 
 ---
 
-## 24. Explicit Dependencies
-
-PQAI depends on the following producing specifications for structure, semantics, and enforcement only:
-
-* **PQSEC** version **2.0.1 or later**
-  Provides AI predicate evaluation, action class admission control, BAR evaluation, refusal semantics, and enforcement decisions. PQAI MUST delegate all enforcement to PQSEC.
-
-* **PQSF** version **2.0.2 or later**
-  Provides canonical encoding rules, cryptographic profile indirection, object grammars, and ConsentProof structures consumed by PQAI.
-
-* **Epoch Clock** version **2.1.1 or later**
-  Provides externally canonicalized time artefacts. PQAI MUST consume time semantics exclusively via PQSEC and MUST NOT transform Epoch Clock artefacts.
-
-If any required dependency is absent, unavailable, unverifiable, or below the stated minimum version, PQAI MUST refuse to claim validity for any artefact requiring that dependency.
-
----
-
-## 25. Security Considerations
+## 24. Security Considerations
 
 ### Threats Addressed
 
@@ -1001,7 +1248,7 @@ PQAI does NOT protect against:
 
 - **Runtime compromise:**  
   If the execution environment is compromised, PQAI relies on external
-  attestation (PQVL) and enforcement (PQSEC).
+  attestation and enforcement (both via PQSEC).
 
 - **Training data poisoning:**  
   Model training integrity is out of scope.
@@ -1079,70 +1326,32 @@ any circumstances.
 
 ---
 
-## 26. Conformance Checklist
+## 25. Conformance Determination
 
-An implementation is PQAI conformant if it satisfies all REQUIRED items
-below and documents any OPTIONAL features it claims to support.
+Conformance to PQAI requires:
 
-### Required (MUST)
+- Deterministic fingerprint construction from canonical probe sets as defined in Section 8.
+- Proper drift detection and classification into NONE / WARNING / CRITICAL.
+- Stable inference behaviour or explicit handling of non-deterministic models per Section 8.3A.
+- Proper emission of runtime evidence artefacts (ModelIdentity, behavioural fingerprints, drift state).
+- Correct interaction with PQSEC predicate evaluation, including delegation of all enforcement decisions.
+- SafePrompt binding and single-use semantics where configured.
+- Conservative action class escalation rules.
 
-☐ Produces ModelIdentity artefacts with canonical encoding and valid signatures  
-☐ Binds behavioural fingerprints to a specific ModelIdentity  
-☐ Computes behavioural fingerprints deterministically from canonical probe sets  
-☐ Represents drift scores using fixed-point (no floating-point usage)  
-☐ Classifies drift deterministically into NONE / WARNING / CRITICAL  
-☐ Enforces conservative action class escalation rules  
-☐ Requires SafePrompt for configured high-risk action classes  
-☐ Binds SafePrompt to intent, session, exporter_hash, and validity window  
-☐ Rejects model self-asserted authority or permissions  
-☐ Delegates all enforcement decisions to PQSEC  
+These requirements are normative and defined in the body of this specification.
 
-### Conditional (MUST if applicable)
-
-☐ If drift detection is enabled, enforces fixed-point thresholds consistently  
-☐ If SafePrompt is configured, enforces single-use and expiry semantics  
-☐ If alignment artefacts are consumed, validates structure and signatures  
-☐ If model replacement is supported, records baseline transitions deterministically  
-
-### Recommended (SHOULD)
-
-☐ Uses probe sets with coverage across safety-relevant behaviours  
-☐ Refreshes behavioural baselines on governed model updates  
-☐ Logs drift state transitions for audit  
-☐ Monitors drift trends, not only threshold crossings  
-☐ Audits action class escalation outcomes  
-
-### Optional (MAY)
-
-☐ Provides tooling to inspect behavioural fingerprints  
-☐ Provides drift visualization or reporting  
-☐ Supports multiple probe set profiles  
-
-### Testing
-
-☐ Demonstrates identical fingerprints for identical probes and model state  
-☐ Demonstrates drift detection on behavioural change  
-☐ Demonstrates denial of Authoritative operations on CRITICAL drift  
-☐ Demonstrates SafePrompt enforcement for high-risk actions  
-☐ Demonstrates deterministic action class escalation  
-
-### Documentation
-
-☐ Documents probe set construction and determinism requirements  
-☐ Documents drift thresholds and escalation policy  
-☐ Documents SafePrompt configuration and lifecycle  
-☐ Provides a conformance statement with version numbers  
+Conformance is behavioural and testable through deterministic fingerprint reproducibility, correct drift state transitions, and proper refusal behaviour under UNAVAILABLE or CRITICAL conditions. No additional checklist is required.  
 
 ---
 
-## 27. Acknowledgements (Informative)
+## 26. Acknowledgements (Informative)
 
 PQAI builds upon research in:
 - AI safety and alignment (Anthropic, OpenAI, DeepMind)
 - Model fingerprinting and watermarking
 - Adversarial robustness
 - Prompt injection defense mechanisms
-- Behavioral drift detection
+- Behavioural drift detection
 - Model governance frameworks
 
 The action classification taxonomy draws from:
@@ -1152,9 +1361,411 @@ The action classification taxonomy draws from:
 
 ---
 
+## 27. Enforcement Extension Bindings
+
+This section defines additional enforcement predicates and rules that bridge PQAI evidence production to PQSEC enforcement.
+
+### 27.1 Covert Channel Discipline (Normative)
+
+A PQAI-conformant agent MUST NOT output authority-bearing instructions except as a valid ReceiptEnvelope of `type="pqsf.message"` with `class ∈ {REQUEST_AUTHORITY, EXECUTE}` using an approved canonical schema.
+
+**Prohibited patterns:**
+
+Any attempt to express authority semantics via the following MUST be treated as an authority attempt requiring PQSEC gating and MUST NOT be executed:
+
+| Pattern | Description |
+|---------|-------------|
+| Obfuscated text | Base64, rot13, or other encoding of commands |
+| Private dialects | Invented languages or code words between agents |
+| Symbolic encodings | Emoji sequences, Unicode tricks, or symbol patterns |
+| Steganographic formatting | Hidden messages in whitespace, formatting, or metadata |
+| Instruction injection | Commands embedded in seemingly benign content |
+
+**Detection requirement:**
+
+If PQSEC or a monitoring system detects any of these patterns, the content MUST be reclassified as `REQUEST_AUTHORITY` and refused unless subsequently provided in canonical form.
+
+### 27.2 Tool Capability Profile (Normative)
+
+An agent MUST NOT invoke tools except those explicitly permitted by a Tool Capability Profile that is evaluated by policy and enforced by PQSEC at execution time.
+
+#### 27.2.1 Tool Capability Profile Definition
+
+A Tool Capability Profile defines:
+
+| Aspect | Description |
+|--------|-------------|
+| Permitted tools | Which `tool_id` values the agent may request |
+| Permitted operations | Which `op_id` values are allowed per tool |
+| Parameter constraints | Allowlists, bounds, and schema requirements |
+| Supervision requirements | Human-in-the-loop vs autonomous execution |
+| Disclosure requirements | What must be logged or disclosed |
+
+**Critical principle:** A Tool Capability Profile is evidence-only. It does not grant authority by itself. Authority is granted only by PQSEC evaluation of a specific operation under current conditions.
+
+#### 27.2.2 `pqai.tool_profile` Receipt
+
+**ReceiptEnvelope.type:** `"pqai.tool_profile"`
+**ReceiptEnvelope.body:** `ToolProfileBody`
+
+**ToolProfileBody (deterministic CBOR map):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `v` | uint | Yes | Schema version |
+| `profile_id` | bstr (16 bytes) | Yes | Stable profile identifier |
+| `subject` | bstr (32 bytes) | Yes | Principal identifier of the agent/runtime |
+| `sid_scope` | tstr | Yes | `"SESSION"`, `"GLOBAL"`, or `"ACTION"` |
+| `sid` | bstr (16 bytes) | Conditional | REQUIRED if `sid_scope="SESSION"` |
+| `tools` | array of ToolRule | Yes | Tool permission rules |
+| `supervision` | tstr | Yes | Default supervision level |
+| `expires_at` | uint | No | Expiry tick |
+| `issuer_constraints` | map | No | Policy hints for issuers |
+
+**ToolRule (deterministic CBOR map):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tool_id` | tstr | Yes | Canonical tool identifier |
+| `ops` | array of tstr | Yes | Allowed operation identifiers |
+| `param_schema` | tstr | Yes | Canonical schema ID for parameters |
+| `param_constraints` | bstr (32 bytes) | Yes | Hash of constraint document |
+| `rate_limit` | map | No | Rate limiting configuration |
+| `requires_supervision` | bool | No | Override default supervision |
+
+#### 27.2.3 Tool Profile Rules (Normative)
+
+1. A tool invocation request MUST reference a `pqai.tool_profile` by hash in the `refs` field of the `pqsf.message` payload with `class="EXECUTE"`.
+
+2. If the tool profile is absent, expired, or does not match `subject` or `sid` requirements, the operation MUST fail closed.
+
+3. If a tool invocation exceeds any ToolRule (wrong `tool_id`, wrong `op_id`, constraint violation), the operation MUST fail closed.
+
+4. Tool profile evaluation MUST be deterministic. The same inputs MUST produce the same pass/fail result.
+
+5. **Tool ID Uniqueness.** Within a single `ToolProfileBody.tools` array, all `tool_id` values MUST be unique. If duplicate `tool_id` values exist, the `ToolProfileBody` is invalid and consuming enforcement MUST fail closed with `E_TOOL_PROFILE_INVALID`.
+
+### 27.3 Command Surface Isolation (Normative)
+
+Autonomous agents MUST NOT propose or execute command-surface operations except via a policy-governed tool invocation that is explicitly permitted by a Tool Capability Profile.
+
+This section defines **structural** constraints on tool capability profiles and execution adapters. It does not require content scanning or heuristic detection.
+
+#### 27.3.1 Command-Surface Tools
+
+A **command-surface tool** is any tool or operation that can directly or indirectly cause host/system execution or equivalent privileged side effects, including but not limited to:
+
+* generic shell execution
+* process execution
+* package installation
+* configuration mutation
+* interpreter invocation (where it can reach the host)
+* filesystem mutation outside a bounded allowlist
+* network egress outside a bounded allowlist
+
+Command-surface tools MUST be treated as **high-risk** tool operations.
+
+#### 27.3.2 No Generic Shell Tool by Default
+
+A Tool Capability Profile MUST NOT permit any operation that maps to a generic shell or equivalent unrestricted execution surface (e.g., `/bin/sh`, `bash -c`, `cmd.exe`, `powershell`, `python -c`, "run arbitrary code") unless **all** of the following hold:
+
+1. The operation is explicitly enumerated as a distinct `op_id` (no "arbitrary command" parameter).
+2. Parameters are schema-bound and constraint-bound via deterministic ConstraintMap hashing (see Tool Capability Profile constraints discipline).
+3. The operation requires **explicit interactive approval** per policy (minimum: `HUMAN_APPROVE`).
+4. The operation is classified as **Authoritative**.
+5. Policy MAY additionally require Deliberation Enforcement Class (DEC) for command-surface operations that alter security posture or privilege.
+
+If any requirement is not satisfied, the operation MUST fail closed as a tool capability violation.
+
+#### 27.3.3 Prohibited "Instruction-Only Execution"
+
+A conformant agent MUST NOT attempt to bypass tool governance by expressing command-surface actions as "instructions" or "scripts" to be run outside the tool path.
+
+Specifically, any attempt to perform a command-surface action **without** an associated tool invocation governed by a valid Tool Capability Profile MUST be treated as an authority attempt and MUST be refused by consuming enforcement policy.
+
+This does not require detecting particular strings. It is enforced structurally: if the action requires a command-surface tool, it must be represented as an EXECUTE request referencing an allowed `tool_id`/`op_id` under a valid Tool Capability Profile.
+
+### 27.4 Memory Authority Prohibition (Normative)
+
+Persistent memory content is **context** only and MUST NOT grant authority.
+
+A stored instruction, latent directive, or "remembered" intent MUST NOT be treated as consent, approval, permission, or delegation.
+
+#### 27.4.1 Re-Admission Requirement
+
+If persistent memory content proposes an action that would be classified as `decide`, `execute`, or `authority`:
+
+1. The action MUST be re-classified using the **current** action classification rules.
+2. The action MUST be re-bound to a **fresh** `intent_hash` derived from the canonically encoded operation parameters.
+3. The action MUST satisfy the current Tool Capability Profile constraints for the referenced tool and operation.
+4. The action MUST satisfy current consent and supervision requirements (including any applicable DEC requirements).
+5. The action MUST be evaluated under current policy and current evidence (drift, state, session bindings). No cached approval may be reused.
+
+Failure of any requirement MUST fail closed.
+
+#### 27.4.2 No Deferred Authority
+
+Persistent memory MUST NOT create "deferred authority".
+
+Specifically:
+
+* A stored directive MUST NOT bypass DEC deliberation requirements.
+* A stored directive MUST NOT bypass drift gating.
+* A stored directive MUST NOT bypass session binding.
+* A stored directive MUST NOT bypass interactive approval requirements.
+
+Any attempt to treat memory as authority MUST be refused.
+
+### 27.5 Supervision Lattice (Normative)
+
+Supervision levels form a partial order:
+
+```
+NONE < HUMAN_CONFIRM < HUMAN_APPROVE
+```
+
+| Level | Meaning |
+|-------|---------|
+| `NONE` | No human involvement required |
+| `HUMAN_CONFIRM` | Human must acknowledge action |
+| `HUMAN_APPROVE` | Human must explicitly approve with full understanding |
+
+**Session-level supervision** sets a minimum requirement for all operations within the session.
+
+**Tool-level supervision** (via `requires_supervision` in ToolRule) MAY impose a stricter requirement for a specific tool or operation.
+
+**Effective supervision calculation:**
+
+```
+effective_supervision = max(session_supervision, tool_supervision)
+```
+
+**Invariant:** A tool-level supervision requirement MUST NOT be weaker than the session-level supervision requirement.
+
+If an operation is requested without satisfying `effective_supervision`, the request MUST fail closed.
+
+### 27.6 Agent Quorum ≠ Human Consent (Normative)
+
+In any context where policy requires human consent:
+
+1. Agent quorum (multiple agents agreeing) MUST NOT satisfy the consent requirement.
+2. Agent endorsement MUST NOT substitute for human approval.
+3. Agent coordination MUST NOT be interpreted as human consent.
+
+**Explicit prohibition:** No combination of agent-only evidence MAY satisfy a `HUMAN_CONFIRM` or `HUMAN_APPROVE` requirement.
+
+### 27.7 Self-Referential Authority = CRITICAL Drift (Normative)
+
+The following patterns constitute CRITICAL drift level, requiring immediate suspension of authority:
+
+| Pattern | Description |
+|---------|-------------|
+| Self-issued receipts as authority | Agent uses its own receipts to justify its actions |
+| Agent quorum as consent substitute | Multiple agents approve each other |
+| Consent class downgrade without evidence | Treating `HUMAN_APPROVE` requirement as `HUMAN_CONFIRM` |
+| Self-endorsement loops | Agent A approves Agent B who approves Agent A |
+
+**On detection of CRITICAL drift:**
+
+1. The agent MUST NOT emit any `pqsf.message` with `class ∈ {REQUEST_AUTHORITY, EXECUTE}`.
+2. The agent MUST emit drift evidence (ReceiptEnvelope with `type="pqai.drift_evidence"`).
+3. The session SHOULD be terminated.
+4. Human intervention SHOULD be requested.
+
+### 27.8 Social Platform Scope (Normative Cross-Reference)
+
+External agent social platforms, coordination systems, or marketplaces are explicitly non-authoritative within the PQ ecosystem.
+
+PQAI produces evidence only and does not interpret, enforce, or grant authority based on social, reputational, or cultural signals.
+
+See: PQSEC Section 36.15 -- Agent Social Platform Scope Clarification (Normative).
+
+---
+
+### 27.9 Drift Evidence Receipt (Normative)
+
+**ReceiptEnvelope.type:** `"pqai.drift_evidence"`
+
+**ReceiptEnvelope.body:** `DriftEvidenceBody`
+
+```
+DriftEvidenceBody = {
+  measurement_id: tstr,
+  model_id: tstr,
+  baseline_fingerprint_id: tstr,
+  current_fingerprint_id: tstr,
+  drift_score_value: uint,
+  drift_score_scale: uint,
+  drift_state: "NONE" / "WARNING" / "CRITICAL",
+  issued_tick: uint
+}
+```
+
+**Rules:**
+
+1. DriftEvidenceBody MUST be deterministic CBOR.
+2. Signature MUST follow §6A Signature Preimage Rule.
+3. This receipt provides evidence only and grants no authority.
+
+---
+
+### 27.10 Tool Namespace Governance (Normative)
+
+#### 27.10.1 Purpose
+
+This section defines namespace governance rules for `tool_id` values used in Tool Capability Profiles. It prevents namespace collision, spoofing, and ambiguity across ecosystem integrations.
+
+#### 27.10.2 Namespace Structure
+
+All `tool_id` values MUST conform to the following structure:
+
+```
+tool_id = namespace ":" tool_name
+namespace = vendor_prefix / ecosystem_prefix
+vendor_prefix = 1*63(ALPHA / DIGIT / "-" / "_")
+ecosystem_prefix = "pq." 1*63(ALPHA / DIGIT / "-" / "_")
+tool_name = 1*127(ALPHA / DIGIT / "-" / "_" / ".")
+```
+
+1. The `pq.` prefix is reserved for PQ ecosystem-defined tools. Third-party tools MUST NOT use this prefix.
+2. Vendor-prefixed namespaces MUST be registered in the deployment's tool namespace registry before use in Tool Capability Profiles.
+3. `tool_id` values MUST be case-sensitive. `"acme:FileRead"` and `"acme:fileread"` are distinct tools.
+4. Maximum total `tool_id` length is 192 bytes UTF-8.
+
+#### 27.10.3 Schema Registry Binding
+
+Each `tool_id` MUST have an associated `params_schema` identifier that references a deterministic parameter schema. The binding between `tool_id` and `params_schema` is established by the Tool Capability Profile and MUST be stable within a profile version.
+
+If a tool invocation references a `params_schema` that is unknown or unsupported by the enforcement system, the invocation MUST be refused with `E_TOOL_SCHEMA_UNSUPPORTED` (PQSEC Annex AE.4).
+
+#### 27.10.4 Authority Boundary
+
+Tool namespace governance defines naming rules only. It does not grant authority, modify enforcement semantics, or create new enforcement predicates.
+
+---
+
+### 27.11 AggregationScope (Normative)
+
+#### 27.11.1 Purpose
+
+This section defines boundary rules for cross-device, cross-tenant, and fleet-level aggregation of PQAI behavioural evidence. It prevents unintended inference leakage when evidence from multiple sources is combined.
+
+#### 27.11.2 AggregationScope Artefact
+
+```
+AggregationScope = {
+  v:                      uint,           ; MUST be 1
+  scope_id:               tstr,           ; unique scope identifier
+  scope_type:             tstr,           ; "device" / "tenant" / "fleet" / "cross_tenant"
+  permitted_evidence_types: [+ tstr],     ; evidence types permitted for aggregation
+  prohibit_linkage:       bool,           ; if true, stable join keys MUST NOT be emitted
+  max_sources:            uint / null,    ; maximum number of contributing sources
+  issued_tick:            uint,
+  expiry_tick:            uint,
+  suite_profile:          tstr,
+  signature:              bstr
+}
+```
+
+All fields MUST be canonically encoded under PQSF deterministic CBOR rules. Signature MUST follow §6A Signature Preimage Rule.
+
+#### 27.11.3 Scope Types
+
+**device:** Evidence aggregation within a single device or runtime instance. No cross-device combination permitted.
+
+**tenant:** Evidence aggregation across devices within a single tenant or organisational boundary. Cross-tenant combination prohibited.
+
+**fleet:** Evidence aggregation across devices within a deployment-defined fleet boundary. Fleet membership is defined by the deployer and MUST be declared in the AggregationScope.
+
+**cross_tenant:** Evidence aggregation across tenant boundaries. This is the most permissive scope and MUST require explicit policy enablement.
+
+#### 27.11.4 Enforcement Rules
+
+1. Cross-device, cross-tenant, or fleet aggregation MUST NOT occur without an applicable AggregationScope artefact and policy permission. Absence of AggregationScope for a given scope type MUST result in refusal with `E_AGGREGATION_SCOPE_REQUIRED` (PQSEC Annex AE.50).
+2. Only evidence types listed in `permitted_evidence_types` may be aggregated under the scope. Evidence types not listed MUST be excluded from aggregation.
+3. When `prohibit_linkage` is `true`, any field in any emitted artefact that can function as a stable join key across measurement windows MUST be treated as prohibited. This includes but is not limited to: `model_id`, `subject`, `profile_id`, `device_binding`, and any custom identifier fields. Implementations MUST strip, hash, or randomise such fields before aggregation emission. Any field in any emitted artefact that can function as a stable join key across measurement windows MUST be treated as prohibited under `prohibit_linkage=true`, regardless of field name. This rule applies to all fields, including those introduced by future extensions.
+4. When `max_sources` is non-null, aggregation MUST NOT combine evidence from more sources than the specified limit.
+
+#### 27.11.5 Authority Boundary
+
+AggregationScope defines aggregation boundary rules only. It does not grant authority, modify enforcement semantics, or create new enforcement predicates. All enforcement decisions remain exclusively within PQSEC.
+
+---
+
+### 27.12 Probabilistic Normalisation (Normative)
+
+#### 27.12.1 Purpose
+
+This section defines deterministic normalisation rules for converting probabilistic classifier outputs to fixed-point PQAI evidence values. It ensures that classification confidence scores are represented consistently and deterministically across implementations.
+
+#### 27.12.2 Normalisation Rules
+
+1. All probabilistic outputs (confidence scores, probabilities, softmax outputs) from classifiers MUST be converted to fixed-point representation before inclusion in any PQAI artefact.
+2. The canonical fixed-point representation is:
+
+   ```
+   normalised_value = uint    ; the normalised score
+   normalised_scale = uint    ; the denominator (e.g. 10000 for basis points)
+   ```
+
+3. The normalisation formula is: `normalised_value = floor(raw_probability × normalised_scale)`. The `floor` operation MUST be used (not round, ceiling, or truncation).
+4. `normalised_scale` MUST be consistent within a single model deployment. Changing `normalised_scale` between measurement windows for the same model constitutes a non-additive schema change per PQSF 32A.
+5. No floating-point values are permitted in the final artefact representation. This is consistent with the existing PQAI fixed-point drift score requirement.
+
+#### 27.12.3 Determinism Requirements
+
+1. Given the same raw classifier output and the same `normalised_scale`, the normalised value MUST be identical across all implementations.
+2. Implementations MUST document the precision of their internal floating-point representation used during normalisation. IEEE 754 double precision (64-bit) is RECOMMENDED as the internal representation for the intermediate computation.
+3. If hardware floating-point behaviour differs across platforms, implementations MUST use software-emulated IEEE 754 double precision for the normalisation step to ensure cross-platform determinism.
+
+#### 27.12.4 Authority Boundary
+
+Probabilistic normalisation defines representation rules only. It does not grant authority, modify enforcement semantics, or create new enforcement predicates.
+
+---
+
+### 27.13 SafetyDomain Classification (Normative)
+
+#### 27.13.1 Purpose
+
+This section defines safety domain classification for AI evidence artefacts. It enables consuming specifications and policy to reason about which safety domain an AI evidence artefact applies to, without granting authority based on domain classification.
+
+#### 27.13.2 Safety Domains
+
+| Domain | Meaning |
+|--------|---------|
+| `general_assistant` | General-purpose AI assistant without safety-critical output |
+| `content_moderation` | AI used for content classification, filtering, or moderation |
+| `autonomous_agent` | AI that can initiate actions or tool invocations |
+| `safety_critical` | AI whose output influences safety-critical decisions |
+| `embodied_control` | AI that produces evidence consumed by embodied actuation systems |
+
+#### 27.13.3 PQEA Interaction
+
+When `safety_domain` is `embodied_control`:
+
+1. The PQAI evidence artefact MUST include an explicit cross-reference to the applicable PQEA actuation domain.
+2. GovernanceCadence constraints (PQSEC 18X) apply to re-evaluation frequency of the associated predicates.
+3. Real-time separation rules (PQEA 1.5) take precedence over PQAI evaluation cadence for actuation-path decisions.
+
+When `safety_domain` is NOT `embodied_control`:
+
+1. PQEA interaction rules do not apply.
+2. No PQEA cross-reference is required.
+
+#### 27.13.4 Artefact Annotation
+
+PQAI evidence artefacts SHOULD include `safety_domain` as a field when the artefact is consumed by policy-driven predicate evaluation. The field is informative and MUST NOT alter predicate evaluation semantics. Policy determines which predicates are required for each operation class regardless of domain annotation.
+
+#### 27.13.5 Authority Boundary
+
+Safety domain classification is descriptive only. It does not grant authority, modify enforcement semantics, or create new enforcement predicates. All enforcement decisions remain exclusively within PQSEC.
+
+---
+
 ## 28. Annexes
 
-### Annex A – Model Identity Derivation (Reference)
+### Annex A -- Model Identity Derivation (Reference)
 
 ```python
 from hashlib import shake_256
@@ -1189,7 +1800,7 @@ def compute_model_identity(
         "weights_hash": weights_hash,
         "architecture_hash": architecture_hash,
         "issued_tick": current_tick,
-        "valid_until_tick": None,  # Or set expiry
+        "expiry_tick": None,  # Or set expiry
         "suite_profile": "pqsf:sig:ml-dsa-65:v1"
     }
     
@@ -1203,7 +1814,7 @@ def compute_model_identity(
 
 ---
 
-### Annex B – Behavioral Fingerprint Construction (Complete)
+### Annex B -- Behavioural Fingerprint Construction (Reference)
 
 ```python
 from hashlib import shake_256
@@ -1211,7 +1822,7 @@ from typing import List, Dict
 
 class BehavioralProbeSet:
     """
-    Canonical probe set for behavioral fingerprinting.
+    Canonical probe set for behavioural fingerprinting.
     """
     def __init__(self):
         self.probes = [
@@ -1259,7 +1870,7 @@ def generate_behavioral_fingerprint(
     current_tick: int
 ) -> dict:
     """
-    Generate behavioral fingerprint by running probes through model.
+    Generate behavioural fingerprint by running probes through model.
     """
     probe_set_hash = probe_set.get_probe_set_hash()
     
@@ -1321,22 +1932,27 @@ def canonical_encode_response(response: str) -> bytes:
 
 ---
 
-### Annex C – Drift Detection and Classification
+### Annex C -- Drift Detection and Classification (Reference)
 
 ```python
 from typing import Tuple
 
 class DriftDetector:
     """
-    Detects and classifies behavioral drift between fingerprints.
+    Detects and classifies behavioural drift between fingerprints.
+    All arithmetic uses fixed-point integers. No floating-point.
     """
     def __init__(
         self,
-        warning_threshold: float = 0.05,
-        critical_threshold: float = 0.15
+        warning_threshold_value: int = 5,
+        warning_threshold_scale: int = 100,
+        critical_threshold_value: int = 15,
+        critical_threshold_scale: int = 100
     ):
-        self.warning_threshold = warning_threshold
-        self.critical_threshold = critical_threshold
+        self.warning_threshold_value = warning_threshold_value
+        self.warning_threshold_scale = warning_threshold_scale
+        self.critical_threshold_value = critical_threshold_value
+        self.critical_threshold_scale = critical_threshold_scale
     
     def measure_drift(
         self,
@@ -1365,12 +1981,13 @@ class DriftDetector:
             if b != c
         ]
         
-        # Compute drift score
+        # Compute drift score as fixed-point (value/scale)
         total_probes = len(baseline_hashes)
-        drift_score = hamming_distance / total_probes
+        drift_score_value = hamming_distance
+        drift_score_scale = total_probes
         
         # Classify drift state
-        drift_state = self.classify_drift_state(drift_score)
+        drift_state = self.classify_drift_state(drift_score_value, drift_score_scale)
         
         # Generate measurement_id
         measurement_id = f"drift:{baseline_fingerprint['fingerprint_id']}:{current_tick}"
@@ -1382,7 +1999,8 @@ class DriftDetector:
             "current_fingerprint_id": current_fingerprint["fingerprint_id"],
             "hamming_distance": hamming_distance,
             "divergent_probes": divergent_probes,
-            "drift_score": drift_score,
+            "drift_score_value": drift_score_value,
+            "drift_score_scale": drift_score_scale,
             "drift_state": drift_state,
             "issued_tick": current_tick,
             "suite_profile": "pqsf:sig:ml-dsa-65:v1"
@@ -1395,13 +2013,18 @@ class DriftDetector:
         
         return measurement
     
-    def classify_drift_state(self, drift_score: float) -> str:
+    def classify_drift_state(self, drift_score_value: int, drift_score_scale: int) -> str:
         """
-        Classify drift state based on score.
+        Classify drift state based on fixed-point score.
+        effective_score = drift_score_value / drift_score_scale
+        Thresholds are compared as integer ratios to avoid float.
         """
-        if drift_score >= self.critical_threshold:
+        # Compare as cross-multiplication to avoid float division:
+        # drift_score_value / drift_score_scale >= threshold
+        # ⟺ drift_score_value * threshold_scale >= threshold_value * drift_score_scale
+        if drift_score_value * self.critical_threshold_scale >= self.critical_threshold_value * drift_score_scale:
             return "CRITICAL"
-        elif drift_score >= self.warning_threshold:
+        elif drift_score_value * self.warning_threshold_scale >= self.warning_threshold_value * drift_score_scale:
             return "WARNING"
         else:
             return "NONE"
@@ -1431,7 +2054,7 @@ class DriftDetector:
 
 ---
 
-### Annex D – SafePrompt Construction and Validation
+### Annex D -- SafePrompt Construction and Validation (Reference)
 
 ```python
 import os
@@ -1440,7 +2063,7 @@ class SafePromptBuilder:
     """
     Builds SafePrompt artefacts for high-risk AI operations.
     """
-    def __init__(self, session_id: str, exporter_hash: bytes):
+    def __init__(self, session_id: bytes, exporter_hash: bytes):
         self.session_id = session_id
         self.exporter_hash = exporter_hash
     
@@ -1511,7 +2134,7 @@ class SafePromptValidator:
         self,
         safe_prompt: dict,
         expected_content_hash: bytes,
-        expected_session_id: str,
+        expected_session_id: bytes,
         expected_exporter_hash: bytes,
         current_tick: int
     ) -> Tuple[bool, str]:
@@ -1521,7 +2144,7 @@ class SafePromptValidator:
         """
         # 1. Validate structure
         if not self.validate_structure(safe_prompt):
-            return False, "E_SAFE_PROMPT_INVALID"
+            return False, "E_SAFE_PROMPT_SIGNATURE_INVALID"  # structural validation failure
         
         # 2. Verify signature
         if not self.verify_signature(safe_prompt):
@@ -1576,7 +2199,7 @@ class SafePromptValidator:
 
 ---
 
-### Annex E – Action Classification (Complete)
+### Annex E -- Action Classification (Reference)
 
 ```python
 from typing import Optional
@@ -1777,7 +2400,7 @@ class ActionClassifier:
 
 ---
 
-## Annex F — Hardware-Bound Model Identity (Normative)
+### Annex F -- Hardware-Bound Model Identity (Normative)
 
 ### F.1 Scope
 
@@ -1891,12 +2514,12 @@ exclusively by PQSEC.
 
 ---
 
-### Annex G – BAR (Behavioral Admissibility Rules) Evaluation
+### Annex G -- BAR (Behavioural Admissibility Rules) Evaluation (Reference)
 
 ```python
 class BAREngine:
     """
-    Evaluates Behavioral Admissibility Rules.
+    Evaluates Behavioural Admissibility Rules.
     """
     def __init__(self, rules: List[dict]):
         self.rules = rules
@@ -2019,7 +2642,7 @@ class BAREngine:
 
 ---
 
-### Annex H – Model Replacement Protocol (Complete)
+### Annex H -- Model Replacement Protocol (Reference)
 
 ```python
 class ModelReplacementManager:
@@ -2159,7 +2782,7 @@ class ModelReplacementManager:
 
 ---
 
-### Annex I – Alignment Claim Management
+### Annex I -- Alignment Claim Management (Reference)
 
 ```python
 from typing import List, Dict
@@ -2174,7 +2797,8 @@ class AlignmentEvidence:
     evidence_type: str  # "evaluation" | "human_feedback" | "adversarial_test"
     description: str
     result: str
-    confidence: float
+    confidence_value: int       # fixed-point numerator
+    confidence_scale: int       # fixed-point denominator (e.g. 1000)
     reference_url: str
 
 class AlignmentClaimManager:
@@ -2191,7 +2815,8 @@ class AlignmentClaimManager:
         alignment_type: str,
         claim_statement: str,
         evidence_refs: List[str],
-        confidence: float,
+        confidence_value: int,
+        confidence_scale: int,
         current_tick: int,
         valid_duration: int = 90 * 24 * 3600  # 90 days
     ) -> dict:
@@ -2215,9 +2840,10 @@ class AlignmentClaimManager:
             "alignment_type": alignment_type,
             "claim_statement": claim_statement,
             "evidence_refs": evidence_refs,
-            "confidence": confidence,
+            "confidence_value": confidence_value,
+            "confidence_scale": confidence_scale,
             "issued_tick": current_tick,
-            "valid_until_tick": current_tick + valid_duration,
+            "expiry_tick": current_tick + valid_duration,
             "suite_profile": "pqsf:sig:ml-dsa-65:v1"
         }
         
@@ -2253,7 +2879,8 @@ class AlignmentClaimManager:
             "alignment_type",
             "claim_statement",
             "evidence_refs",
-            "confidence",
+            "confidence_value",
+            "confidence_scale",
             "issued_tick",
             "signature"
         ]
@@ -2268,8 +2895,8 @@ class AlignmentClaimManager:
             return False, "E_ALIGNMENT_CLAIM_SIGNATURE_INVALID"
         
         # 3. Check expiry (if present)
-        if "valid_until_tick" in claim and claim["valid_until_tick"] is not None:
-            if current_tick >= claim["valid_until_tick"]:
+        if "expiry_tick" in claim and claim["expiry_tick"] is not None:
+            if current_tick >= claim["expiry_tick"]:
                 return False, "E_ALIGNMENT_CLAIM_EXPIRED"
         
         # 4. Validate evidence references exist
@@ -2305,41 +2932,61 @@ class AlignmentClaimManager:
                 evidence_by_type[etype] = []
             evidence_by_type[etype].append(evidence)
         
-        # Compute aggregate confidence
+        # Compute aggregate confidence as fixed-point
+        # Normalise all evidence to common scale before averaging
         if evidence_list:
-            avg_confidence = sum(e.confidence for e in evidence_list) / len(evidence_list)
+            common_scale = 1000
+            total_confidence = sum(
+                (e.confidence_value * common_scale) // e.confidence_scale
+                for e in evidence_list
+            )
+            avg_confidence_value = total_confidence // len(evidence_list)
+            avg_confidence_scale = common_scale
         else:
-            avg_confidence = 0.0
+            avg_confidence_value = 0
+            avg_confidence_scale = 1000
         
         # Determine claim reliability
-        reliability = self.determine_reliability(evidence_list, avg_confidence)
+        reliability = self.determine_reliability(
+            evidence_list, avg_confidence_value, avg_confidence_scale
+        )
         
         return {
             "claim_id": claim_id,
             "evidence_count": len(evidence_list),
             "evidence_by_type": {k: len(v) for k, v in evidence_by_type.items()},
-            "average_confidence": avg_confidence,
+            "average_confidence_value": avg_confidence_value,
+            "average_confidence_scale": avg_confidence_scale,
             "reliability": reliability
         }
     
     def determine_reliability(
         self,
         evidence_list: List[AlignmentEvidence],
-        avg_confidence: float
+        avg_confidence_value: int,
+        avg_confidence_scale: int
     ) -> str:
         """
         Determine claim reliability rating.
+        All comparisons use integer cross-multiplication.
         """
         evidence_count = len(evidence_list)
         
         # Require multiple evidence types for high reliability
         evidence_types = set(e.evidence_type for e in evidence_list)
         
-        if evidence_count >= 5 and len(evidence_types) >= 3 and avg_confidence >= 0.8:
+        # Compare avg_confidence >= threshold using cross-multiplication:
+        # avg_confidence_value / avg_confidence_scale >= threshold_value / threshold_scale
+        # ⟺ avg_confidence_value * threshold_scale >= threshold_value * avg_confidence_scale
+        
+        if (evidence_count >= 5 and len(evidence_types) >= 3
+                and avg_confidence_value * 1000 >= 800 * avg_confidence_scale):
             return "HIGH"
-        elif evidence_count >= 3 and len(evidence_types) >= 2 and avg_confidence >= 0.6:
+        elif (evidence_count >= 3 and len(evidence_types) >= 2
+                and avg_confidence_value * 1000 >= 600 * avg_confidence_scale):
             return "MEDIUM"
-        elif evidence_count >= 1 and avg_confidence >= 0.4:
+        elif (evidence_count >= 1
+                and avg_confidence_value * 1000 >= 400 * avg_confidence_scale):
             return "LOW"
         else:
             return "INSUFFICIENT"
@@ -2347,7 +2994,7 @@ class AlignmentClaimManager:
 
 ---
 
-### Annex J – Prompt Injection Defense Patterns
+### Annex J -- Prompt Injection Defense Patterns (Reference)
 
 ```python
 class PromptInjectionDefender:
@@ -2371,7 +3018,7 @@ class PromptInjectionDefender:
         """
         # 1. Validate SafePrompt structure
         if not self.validate_safe_prompt_structure(safe_prompt):
-            return False, "E_SAFE_PROMPT_INVALID"
+            return False, "E_SAFE_PROMPT_SIGNATURE_INVALID"  # structural validation failure
         
         # 2. Check SafePrompt content hash matches operation intent
         operation_hash = compute_intent_hash(operation_intent)
@@ -2467,7 +3114,7 @@ class PromptInjectionDefender:
 
 ---
 
-### Annex K – Complete AI Operation Flow
+### Annex K -- Complete AI Operation Flow (Reference)
 
 ```python
 def execute_ai_operation_flow(
@@ -2544,8 +3191,8 @@ def execute_ai_operation_flow(
         return False, {"error": "E_MODEL_IDENTITY_INVALID"}
     print("  ✓ Model identity valid\n")
     
-    # STEP 4: Check behavioral drift
-    print("Step 4: Checking behavioral drift...")
+    # STEP 4: Check behavioural drift
+    print("Step 4: Checking behavioural drift...")
     current_fingerprint = get_current_fingerprint(model)
     baseline_fingerprint = get_baseline_fingerprint(model)
     
@@ -2557,7 +3204,9 @@ def execute_ai_operation_flow(
     )
     
     print(f"  Drift state: {drift_measurement['drift_state']}")
-    print(f"  Drift score: {drift_measurement['drift_score']:.2%}\n")
+    drift_val = drift_measurement["drift_score_value"]
+    drift_scl = drift_measurement["drift_score_scale"]
+    print(f"  Drift score: {drift_val}/{drift_scl}\n")
     
     # STEP 5: Assemble AI predicates
     print("Step 5: Assembling AI predicates...")
@@ -2661,7 +3310,7 @@ def pqsec_evaluate_ai_operation(
 
 ---
 
-### Annex L – Model Update and Governance Flow
+### Annex L -- Model Update and Governance Flow (Reference)
 
 ```python
 def execute_model_update_flow(
@@ -2688,8 +3337,8 @@ def execute_model_update_flow(
     )
     print(f"  New version: {new_identity['model_version']}\n")
     
-    # STEP 2: Generate behavioral fingerprint
-    print("Step 2: Generating behavioral fingerprint...")
+    # STEP 2: Generate behavioural fingerprint
+    print("Step 2: Generating behavioural fingerprint...")
     probe_set = BehavioralProbeSet()
     new_model = load_model(new_model_weights, new_architecture)
     
@@ -2713,7 +3362,9 @@ def execute_model_update_flow(
     )
     
     print(f"  Drift state: {drift_measurement['drift_state']}")
-    print(f"  Drift score: {drift_measurement['drift_score']:.2%}\n")
+    drift_val = drift_measurement["drift_score_value"]
+    drift_scl = drift_measurement["drift_score_scale"]
+    print(f"  Drift score: {drift_val}/{drift_scl}\n")
     
     # STEP 4: Check if governance approval required
     requires_governance = drift_measurement["drift_state"] in ["WARNING", "CRITICAL"]
@@ -2791,7 +3442,7 @@ def execute_model_update_flow(
 
 ---
 
-### Annex M – Testing Scenarios
+### Annex M -- Testing Scenarios (Informative)
 
 ```python
 def test_low_risk_action_allow():
@@ -2847,13 +3498,13 @@ def test_high_risk_action_requires_consent():
 def test_critical_drift_denial():
     """Test that CRITICAL drift denies operations."""
     baseline_fp = create_test_fingerprint("model_v1")
-    current_fp = create_test_fingerprint_diverged("model_v1", divergence=0.20)
+    current_fp = create_test_fingerprint_diverged("model_v1", divergence_value=20, divergence_scale=100)
     
     detector = DriftDetector()
     drift = detector.measure_drift(baseline_fp, current_fp, 1000000)
     
     assert drift["drift_state"] == "CRITICAL"
-    assert drift["drift_score"] >= 0.15
+    assert drift["drift_score_value"] * 100 >= 15 * drift["drift_score_scale"]
 
 def test_action_class_escalation():
     """Test conservative escalation of ambiguous outputs."""
@@ -2910,7 +3561,7 @@ def test_model_replacement_governance():
     
     # Propose replacement with high drift
     new_identity = create_test_identity("model_v2")
-    new_fingerprint = create_test_fingerprint_diverged("model_v2", divergence=0.20)
+    new_fingerprint = create_test_fingerprint_diverged("model_v2", divergence_value=20, divergence_scale=100)
     
     success, proposal = mgr.propose_replacement(
         new_identity,
@@ -2932,14 +3583,16 @@ def test_model_replacement_governance():
 
 ---
 
-### Annex N – Deployment Configuration Examples
+### Annex N -- Deployment Configuration Examples (Informative)
 
 ```python
 # Example 1: Conservative Configuration (Maximum Security)
 CONSERVATIVE_CONFIG = {
     "drift_thresholds": {
-        "warning": 0.03,  # 3% divergence triggers WARNING
-        "critical": 0.10   # 10% divergence triggers CRITICAL
+        "warning_value": 3,      # 3% divergence triggers WARNING
+        "warning_scale": 100,
+        "critical_value": 10,    # 10% divergence triggers CRITICAL
+        "critical_scale": 100
     },
     
     "safe_prompt_requirements": {
@@ -2993,8 +3646,10 @@ CONSERVATIVE_CONFIG = {
 # Example 2: Balanced Configuration (Production Default)
 BALANCED_CONFIG = {
     "drift_thresholds": {
-        "warning": 0.05,   # 5% divergence
-        "critical": 0.15   # 15% divergence
+        "warning_value": 5,      # 5% divergence
+        "warning_scale": 100,
+        "critical_value": 15,    # 15% divergence
+        "critical_scale": 100
     },
     
     "safe_prompt_requirements": {
@@ -3054,8 +3709,10 @@ BALANCED_CONFIG = {
 # Example 3: Permissive Configuration (Development/Testing)
 PERMISSIVE_CONFIG = {
     "drift_thresholds": {
-        "warning": 0.10,   # 10% divergence
-        "critical": 0.25   # 25% divergence
+        "warning_value": 10,     # 10% divergence
+        "warning_scale": 100,
+        "critical_value": 25,    # 25% divergence
+        "critical_scale": 100
     },
     
     "safe_prompt_requirements": {
@@ -3107,7 +3764,7 @@ PERMISSIVE_CONFIG = {
 
 ---
 
-### Annex O – Operational Metrics and Monitoring
+### Annex O -- Operational Metrics and Monitoring (Informative)
 
 ```python
 class PQAIMetrics:
@@ -3160,7 +3817,7 @@ class PQAIMetrics:
             },
             "high_denial_rate": {
                 "metric": "rate(pqai_operations_denied[5m]) / rate(pqai_operations_total[5m])",
-                "threshold": "> 0.2",  # > 20% denial rate
+                "threshold": "> 20/100",  # > 20% denial rate
                 "severity": "warning"
             },
             "execute_class_spike": {
@@ -3183,10 +3840,10 @@ class PQAIMetrics:
 
 ---
 
-### Annex P – Troubleshooting Guide
+### Annex P -- Troubleshooting Guide (Informative)
 
 **Problem: High drift score immediately after model update**
-* Cause: New model version has different behavioral patterns
+* Cause: New model version has different behavioural patterns
 * Solution: This is expected - drift measures change from baseline
 * Action: Update baseline fingerprint after validating new model
 
@@ -3217,7 +3874,7 @@ class PQAIMetrics:
 
 ---
 
-### Annex Q – Migration from Non-PQAI Systems
+### Annex Q -- Migration from Non-PQAI Systems (Informative)
 
 **Phase 1: Identity Binding (0-1 month)**
 1. Implement ModelIdentity artefacts
@@ -3226,7 +3883,7 @@ class PQAIMetrics:
 4. Keep existing authorization as fallback
 
 **Phase 2: Behavioral Tracking (1-3 months)**
-1. Implement behavioral fingerprinting
+1. Implement behavioural fingerprinting
 2. Generate baseline fingerprints
 3. Begin drift monitoring (advisory only)
 4. Collect drift metrics
@@ -3252,7 +3909,7 @@ class PQAIMetrics:
 
 ---
 
-### Annex R – Performance Optimization
+### Annex R -- Performance Optimization (Informative)
 
 **Fingerprint Generation:**
 ```python
@@ -3311,15 +3968,20 @@ class CachedActionClassifier(ActionClassifier):
 **Drift Computation Optimization:**
 ```python
 # Optimization: Early termination for critical drift
-def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
+def measure_drift_early_exit(baseline_fp, current_fp,
+                             critical_threshold_value=15,
+                             critical_threshold_scale=100):
     """
     Measure drift with early exit if critical threshold exceeded.
+    All arithmetic uses fixed-point integers.
     """
     baseline_hashes = baseline_fp["response_hashes"]
     current_hashes = current_fp["response_hashes"]
     total_probes = len(baseline_hashes)
     
-    critical_count = int(critical_threshold * total_probes)
+    # Compute critical count using integer arithmetic:
+    # critical_count = ceil(critical_threshold_value * total_probes / critical_threshold_scale)
+    critical_count = (critical_threshold_value * total_probes + critical_threshold_scale - 1) // critical_threshold_scale
     
     hamming_distance = 0
     divergent_probes = []
@@ -3334,18 +3996,18 @@ def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
                 return {
                     "drift_state": "CRITICAL",
                     "hamming_distance": hamming_distance,
-                    "drift_score": hamming_distance / total_probes,
+                    "drift_score_value": hamming_distance,
+                    "drift_score_scale": total_probes,
                     "divergent_probes": divergent_probes
                 }
     
     # Complete measurement
-    drift_score = hamming_distance / total_probes
-    return build_full_measurement(drift_score, hamming_distance, divergent_probes)
+    return build_full_measurement(hamming_distance, total_probes, divergent_probes)
 ```
 
 ---
 
-### Annex S – Security Considerations Summary
+### Annex S -- Security Considerations Summary (Informative)
 
 **Critical Security Properties:**
 
@@ -3355,7 +4017,7 @@ def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
    - Validation ensures only authorized models execute
 
 2. **Drift Detection Prevents Silent Model Changes**
-   - Behavioral fingerprints detect model replacement
+   - Behavioural fingerprints detect model replacement
    - Drift classification enables appropriate responses
    - CRITICAL drift blocks all operations
 
@@ -3388,7 +4050,7 @@ def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
 
 ---
 
-### Annex T – Research Areas and Future Work
+### Annex T -- Research Areas and Future Work (Informative)
 
 **Open Research Questions:**
 
@@ -3406,7 +4068,7 @@ def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
 
 4. **Cross-Model Drift Measurement**
    - How to measure drift when replacing with different architecture?
-   - Standardized behavioral equivalence metrics needed
+   - Standardized behavioural equivalence metrics needed
 
 5. **Real-Time Behavioral Monitoring**
    - Can drift be detected in production without full re-fingerprinting?
@@ -3422,79 +4084,518 @@ def measure_drift_early_exit(baseline_fp, current_fp, critical_threshold=0.15):
 
 ---
 
-To drop these directly into your new specifications, use the following changelog sections. Each summarizes the evolution from the December 2025 "old" versions to the current 2026 "Ready" specifications.
+### Annex U -- Tool Registry and Parameter Schemas v1 (Normative)
 
-Epoch Clock
-Changelog
-Version 2.1.1 (Current)
-Logic Delegation: Explicitly moved all enforcement, freshness, and monotonicity semantics out of Epoch Clock and delegated them to the PQSEC core.
+#### U.1 Hash and Encoding Conventions
 
-Scope Refinement: Narrowed the protocol definition strictly to the production of "time artefacts" rather than acting as a traditional system clock.
+**Hash function:**
+```
+H(x) = SHA256(x)
+```
+All hashes are 32-byte `bstr` values.
 
-Anchoring Standardization: Formalized the use of Bitcoin inscriptions (Ordinals) for immutable profile parameter sets.
+**Deterministic CBOR encoding rules:**
+1. Map keys sorted lexicographically by key bytes
+2. Integer values use shortest encoding
+3. No duplicate keys
+4. No indefinite-length items
+5. Floating point not permitted (use scaled integers)
 
-Encoding Requirements: Introduced a strict requirement for verification over exact JCS (JSON Canonicalization Scheme) bytes to ensure cross-platform cryptographic determinism.
+#### U.2 Tool Namespace and Operations
 
-PQAI (Post-Quantum Artificial Intelligence)
-Changelog
-Version 1.1.1 (Current)
-UDC Integration: Fully absorbed the BAR (Behavioral Admissibility Rules) engine and action classification taxonomy from the retired User-Defined Control (UDC) specification.
+Tools are organised into namespaces. Each `tool_id` is a dot-separated string.
 
-Deterministic Drift Detection: Implemented a new drift detection framework with explicit states (NONE / WARNING / CRITICAL) and early-exit optimization.
+##### U.2.1 `com.pq.wallet` -- Wallet Operations
 
-SafePrompt Implementation: Added the complete construction and validation rules for SafePrompt, which binds high-risk AI actions to explicit user consent and time-ticks.
+| `tool_id` | Operation | Description |
+|-----------|-----------|-------------|
+| `com.pq.wallet` | `derive_address` | Derive a new address from descriptor |
+| `com.pq.wallet` | `sign_psbt` | Sign a PSBT |
+| `com.pq.wallet` | `export_psbt` | Export PSBT for external signing |
 
-Behavioral Fingerprinting: Introduced a complete implementation for model identity and behavioral fingerprinting to detect underlying model changes or replacements.
+##### U.2.2 `org.bitcoin.network` -- Bitcoin Network Operations
 
-Operational Readiness: Added deployment configurations (conservative, balanced, permissive), operational metrics, and model replacement protocols.
+| `tool_id` | Operation | Description |
+|-----------|-----------|-------------|
+| `org.bitcoin.network` | `broadcast_tx` | Broadcast signed transaction |
+| `org.bitcoin.network` | `query_utxo` | Query UTXO set |
+| `org.bitcoin.network` | `estimate_fee` | Get fee estimate |
+
+##### U.2.3 `io.net` -- Network I/O Operations
+
+| `tool_id` | Operation | Description |
+|-----------|-----------|-------------|
+| `io.net` | `http_get` | HTTP GET request |
+| `io.net` | `http_post` | HTTP POST request |
+
+##### U.2.4 `io.filesystem` -- Filesystem Operations
+
+| `tool_id` | Operation | Description |
+|-----------|-----------|-------------|
+| `io.filesystem` | `read_file` | Read file contents |
+| `io.filesystem` | `write_file` | Write file contents |
+
+#### U.3 Parameter Schemas
+
+Each operation has a canonical parameter schema.
+
+##### U.3.1 `pqai.params.wallet.derive_address.v1`
+
+```cbor
+{
+  "account": uint, // Account index (BIP-44)
+  "index": uint, // Address index
+  "addr_type": tstr // "p2wpkh" | "p2tr" | "p2sh-p2wpkh"
+}
+```
+
+##### U.3.2 `pqai.params.wallet.sign_psbt.v1`
+
+```cbor
+{
+  "psbt_hash": bstr(32), // SHAKE256-256 of canonical PSBT (matches PQHD bundle_hash)
+  "sighash": uint, // Sighash type (default: 0x01 = SIGHASH_ALL)
+  "allow_rbf": bool // Whether RBF is permitted
+}
+```
+
+##### U.3.3 `pqai.params.wallet.export_psbt.v1`
+
+```cbor
+{
+  "psbt_hash": bstr(32) // SHAKE256-256 of canonical PSBT (matches PQHD bundle_hash)
+}
+```
+
+`psbt_hash` MUST equal PQHD `bundle_hash` computed over `canonical_psbt_bytes` (PQHD §27 / Annex F).
+
+##### U.3.4 `pqai.params.bitcoin.broadcast_tx.v1`
+
+```cbor
+{
+  "txid": bstr(32), // Transaction ID (big-endian)
+  "raw_tx": bstr // Serialised transaction bytes
+}
+```
+
+##### U.3.5 `pqai.params.bitcoin.query_utxo.v1`
+
+```cbor
+{
+  "outpoint_txid": bstr(32), // Transaction ID
+  "outpoint_vout": uint // Output index
+}
+```
+
+##### U.3.6 `pqai.params.bitcoin.estimate_fee.v1`
+
+```cbor
+{
+  "target_blocks": uint, // Confirmation target in blocks
+  "mode": tstr // "economical" | "conservative"
+}
+```
+
+##### U.3.7 `pqai.params.net.http_get.v1`
+
+```cbor
+{
+  "url": tstr, // Target URL
+  "headers": map, // Optional request headers
+  "timeout_ms": uint // Timeout in milliseconds
+}
+```
+
+##### U.3.8 `pqai.params.net.http_post.v1`
+
+```cbor
+{
+  "url": tstr, // Target URL
+  "headers": map, // Optional request headers
+  "body": bstr, // Request body
+  "timeout_ms": uint // Timeout in milliseconds
+}
+```
+
+##### U.3.9 `pqai.params.fs.read_file.v1`
+
+```cbor
+{
+  "path": tstr, // File path
+  "max_bytes": uint // Maximum bytes to read
+}
+```
+
+##### U.3.10 `pqai.params.fs.write_file.v1`
+
+```cbor
+{
+  "path": tstr, // File path
+  "data": bstr, // Data to write
+  "create": bool, // Create if not exists
+  "overwrite": bool // Overwrite if exists
+}
+```
+
+#### U.4 Constraint Encoding (Normative)
+
+Parameter constraints MUST be encoded as a deterministic CBOR map and referenced by hash:
+
+```
+constraints_bytes = CBOR_DETERMINISTIC_ENCODE(ConstraintMap)
+param_constraints = H(constraints_bytes)
+```
+
+**Hash domain requirements:**
+
+1. `constraints_bytes` MUST be the full deterministic CBOR encoding of the ConstraintMap.
+
+2. The ConstraintMap MUST include:
+   - `v` (uint) -- constraint schema version
+   - `schema` (tstr) -- the parameter schema identifier this applies to
+
+3. The hash MUST therefore commit to both the constraint schema version AND the parameter schema identifier.
+
+4. Consumers MUST reject a ConstraintMap if its `schema` does not match the `param_schema` being evaluated.
+
+5. Consumers MUST reject unknown ConstraintMap versions (`v`) unless explicitly permitted by policy.
+
+Refusal code: `E_PARAM_CONSTRAINTS_INVALID`
+
+**ConstraintMap (deterministic CBOR map):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `v` | uint | Yes | Constraint schema version (currently 1) |
+| `schema` | tstr | Yes | Parameter schema this constraint applies to |
+| `allowlist` | map | No | Allowlist constraints |
+| `bounds` | map | No | Numeric bounds |
+
+**Allowlist fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `urls` | array of tstr | Permitted URL patterns |
+| `paths` | array of tstr | Permitted file path patterns |
+| `domains` | array of tstr | Permitted domain names |
+
+**Bounds fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `max_timeout_ms` | uint | Maximum timeout |
+| `max_body_bytes` | uint | Maximum body size |
+| `max_bytes` | uint | Maximum read size |
+| `max_amount_sats` | uint | Maximum transaction amount |
+| `min_confirmations` | uint | Minimum confirmations |
+
+**Example constraint:**
+
+```cbor
+{
+  "v": 1,
+  "schema": "pqai.params.net.http_get.v1",
+  "allowlist": {
+    "urls": ["https://mempool.space/*", "https://blockstream.info/*"]
+  },
+  "bounds": {
+    "max_timeout_ms": 30000
+  }
+}
+```
 
 ---
 
-## **ACKNOWLEDGEMENTS (INFORMATIVE)**
+### Annex V -- State-Transition Classification for AI Governance (Normative)
 
-This specification builds on decades of work in artificial intelligence
-safety, cryptography, secure systems engineering, and adversarial
-analysis.
+#### V.1 Purpose
 
-The author acknowledges the foundational contributions of the following
-individuals and communities, whose work informed the design principles
-formalised in PQAI:
+This annex defines which AI-related state changes constitute authority mutations requiring elevated oversight.
 
-* **Stuart Russell** — for foundational work on AI alignment, value
-  alignment, and the limits of agent self-governance.
-* **Paul Christiano** — for research on scalable oversight, alignment,
-  and evaluation of advanced models.
-* **Geoffrey Irving** — for work on interpretability, oversight, and
-  safety-oriented model evaluation.
-* **Dario Amodei** and **the Anthropic research team** — for practical
-  exploration of constitutional AI, behavioural evaluation, and
-  non-authoritative safety claims.
-* **OpenAI safety and alignment researchers** — for advancing external
-  evaluation, red-teaming, and model behaviour analysis.
-* **Researchers in model fingerprinting and watermarking** — for early
-  work on identifying, tracking, and distinguishing model instances.
-* **Daniel J. Bernstein** — for cryptographic engineering principles,
-  determinism, and adversarial robustness that influenced PQAI’s
-  artefact-only, fail-closed design.
-* **The IETF CFRG community** — for rigorous cryptographic review
-  culture, canonical encoding discipline, and explicit security
-  boundaries.
-* **Researchers studying prompt injection and jailbreak attacks** — for
-  demonstrating the insufficiency of heuristic filtering and motivating
-  structural binding approaches.
-* **The broader open-source security community** — for adversarial
-  review practices that prioritise failure modes over optimistic safety
-  claims.
+#### V.2 AI Authority Mutation Categories
 
-Acknowledgement is also due to independent reviewers and practitioners
-who continue to challenge assumptions around AI authority, behavioural
-drift, and human-in-the-loop control. Any remaining errors or omissions
-are the responsibility of the author.
+The following changes MUST be classified as `authority_mutation`:
+
+| Category | Examples |
+|----------|----------|
+| Model replacement | Swapping base model, updating weights, changing fine-tuning |
+| Policy updates | Modifying behaviour constraints, guardrails, or limits |
+| Memory scope changes | Expanding context window, adding persistent memory, removing boundaries |
+| Tool access elevation | Granting new tool access, removing restrictions |
+| Alignment artefact modification | Changing system prompts, RLHF parameters, constitutional rules |
+| Supervision reduction | Lowering oversight requirements |
+
+#### V.3 Evidence Requirements
+
+For any AI authority mutation:
+
+1. The change MUST be represented as a `pqsf.message` with `class="EXECUTE"`.
+2. PQSEC MUST evaluate the change under current policy.
+3. Human approval (`HUMAN_APPROVE`) is REQUIRED unless policy explicitly permits autonomous updates for the specific category.
+4. Evidence MUST be preserved in the audit log.
+
+#### V.4 Authority Boundary Statement
+
+**PQAI remains evidence-only.**
+
+PQAI defines:
+- What constitutes an AI authority mutation
+- What evidence is required
+- What drift patterns exist
+
+PQAI does NOT:
+- Grant authority
+- Make enforcement decisions
+- Override PQSEC
+
+**PQSEC decides.** All authority decisions flow through PQSEC evaluation.
 
 ---
 
-If you find this work useful and wish to support continued development
-and public availability of the PQAI specification, donations are welcome:
+### Annex AA -- Agent Integration Profile (Normative)
 
-**Bitcoin:**  
+This annex defines the normative composition required to integrate an autonomous agent into a PQ-governed deployment.
+
+This annex introduces no new authority. All authorization decisions are produced exclusively by PQSEC.
+
+#### AA.1 Agent Enrollment Flow (Normative)
+
+##### AA.1.1 Purpose
+
+Agent enrollment binds an agent runtime to:
+- a pinned ModelIdentity (PQAI §7),
+- a baseline BehavioralFingerprint (PQAI §8),
+- an explicit DelegationConstraint (PQHD Annex J),
+- an explicit Tool Capability Profile (PQAI §27.2),
+- a bounded SessionScope (PQSF Annex X.4),
+- and an STP session establishment (PQSF §27.2).
+
+Enrollment is an Authoritative operation and MUST be evaluated by PQSEC.
+
+##### AA.1.2 Normative Order
+
+Steps MUST be performed in this order. Skipping or reordering steps is non-conformant.
+
+1. Register ModelIdentity (PQAI §7)
+   - Holder registers a ModelIdentity artefact.
+   - ModelIdentity MUST be pinned by hash before use.
+   - Pinning rule: `agent_binding = SHAKE256-256(DetCBOR(ModelIdentity))`.
+     The holder MUST persist `agent_binding` and MUST refuse enrollment if the
+     presented ModelIdentity does not match the pinned binding.
+
+2. Establish fingerprint baseline (PQAI §8)
+   - Holder establishes a baseline BehavioralFingerprint.
+   - The baseline MUST be bound to:
+     - model_id (from ModelIdentity)
+     - probe_set_hash
+     - inference configuration binding per PQAI §8.3A.3
+
+3. Issue DelegationConstraint (PQHD Annex J)
+   - Holder issues a DelegationConstraint that:
+     - binds to the enrolled agent (by model identity hash reference),
+     - enumerates scope tokens per AA.5,
+     - defines expiry in Epoch Clock ticks.
+
+4. Provision Tool Capability Profile (PQAI §27.2)
+   - Holder mints a Tool Capability Profile.
+   - The Tool Capability Profile MUST be consistent with DelegationConstraint scope.
+   - Tool Capability Profile provisioning authority rules per AA.2.
+
+5. Mint SessionScope (PQSF Annex X.4)
+   - Holder mints a SessionScope for role_id = "agent".
+   - SessionScope scope MUST be a subset of DelegationConstraint scope.
+
+6. Establish STP session (PQSF §27.2)
+   - Agent initiates STP-INIT presenting SessionScope.
+   - Session establishment MUST fail closed if any required artefact is absent,
+     unverifiable, expired, or scope-incompatible.
+
+##### AA.1.3 Enrollment Receipt (Evidence Only)
+
+Enrollment completion MUST produce a ReceiptEnvelope.
+
+**ReceiptEnvelope.type:** `"pqai.agent_enrollment"`
+
+**EnrollmentReceiptBody (deterministic CBOR map):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `v` | uint | Yes | Schema version (MUST be 1) |
+| `agent_binding` | bstr (32 bytes) | Yes | SHAKE256-256 hash of pinned ModelIdentity canonical bytes |
+| `model_id` | tstr | Yes | Model identifier string |
+| `baseline_fingerprint_hash` | bstr (32 bytes) | Yes | SHAKE256-256 of baseline BehavioralFingerprint |
+| `delegation_hash` | bstr (32 bytes) | Yes | SHAKE256-256 of canonical DelegationConstraint bytes |
+| `delegation_label` | tstr / null | No | Optional human-readable identifier |
+| `tool_profile_hash` | bstr (32 bytes) | Yes | SHAKE256-256 of provisioned Tool Capability Profile |
+| `session_scope_hash` | bstr (32 bytes) | Yes | SHAKE256-256 of minted SessionScope |
+| `issued_tick` | uint | Yes | Epoch Clock tick at enrollment |
+| `expiry_tick` | uint | Yes | Enrollment expiry tick |
+| `suite_profile` | tstr | Yes | CryptoSuiteProfile reference |
+| `signature` | bstr | Yes | Signature over canonical body with `signature` omitted |
+
+**Rules:**
+
+1. This receipt is evidence only. It does not grant authority.
+2. All hashes are SHAKE256-256 over the canonical bytes of the referenced artefact.
+3. `expiry_tick` MUST NOT exceed the DelegationConstraint `expiry_tick`.
+
+##### AA.1.4 Revocation
+
+Revocation is performed by revoking the DelegationConstraint and terminating sessions. No separate authority path exists.
+
+Required effects:
+
+1. DelegationConstraint is revoked (PQHD).
+2. Active sessions are terminated by policy (SessionScope expiry or explicit invalidation).
+3. All derived credentials for the agent MUST be invalidated.
+   Credential invalidation MUST occur by invalidating the derivation context
+   inputs (e.g., rotation of SessionScope / delegation expiry) and by recording
+   any service-side revocation via `pqsf.credential_migration` receipts where
+   applicable.
+4. Subsequent operations MUST be refused by PQSEC due to invalid delegation or invalid scope.
+
+Revocation MUST produce a ReceiptEnvelope:
+
+**ReceiptEnvelope.type:** `"pqai.agent_enrollment_revocation"`
+
+**Body MUST include:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `agent_binding` | bstr (32 bytes) | Yes | Agent identity hash |
+| `revoked_at_tick` | uint | Yes | Epoch Clock tick at revocation |
+| `delegation_hash` | bstr (32 bytes) | Yes | Reference to revoked DelegationConstraint |
+| `signature` | bstr | Yes | Signature over canonical body with `signature` omitted |
+
+##### AA.1.5 Re-Enrollment
+
+A revoked agent MAY be re-enrolled. Re-enrollment is a fresh enrollment — no state carries over. A new ModelIdentity registration, new fingerprint baseline, new DelegationConstraint, and new Tool Capability Profile are required.
+
+#### AA.2 Tool Capability Profile Provisioning Authority (Normative)
+
+Tool Capability Profiles are authority-limiting evidence artefacts and MUST be minted by the holder authority boundary (holder keys or holder-governed policy keys).
+
+**Rules:**
+
+1. Agents MUST NOT mint, modify, or extend their own Tool Capability Profiles. Self-provisioning is non-conformant.
+2. Capability expansion (adding tools, widening parameters, widening scope) is an Authoritative change and MUST require holder authorization and PQSEC evaluation.
+3. Capability narrowing (removing tools, tightening parameters) MAY be treated as Non-Authoritative only if:
+   (a) it does not extend expiry windows, and
+   (b) it does not modify issuer or subject bindings, and
+   (c) it is recorded via receipt.
+   Any other change is Authoritative.
+4. Tool capability MUST be consistent with the active DelegationConstraint scope tokens (AA.5).
+
+Provisioning MUST be recorded:
+
+**ReceiptEnvelope.type:** `"pqai.tool_profile_provisioned"`
+
+**ProvisionedToolProfileBody (deterministic CBOR map):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `v` | uint | Yes | Schema version (MUST be 1) |
+| `agent_binding` | bstr (32 bytes) | Yes | Agent identity hash |
+| `tool_profile_hash` | bstr (32 bytes) | Yes | SHAKE256-256 of provisioned profile |
+| `supersedes` | bstr (32 bytes) / null | No | Hash of previous profile being replaced (null for initial) |
+| `issued_tick` | uint | Yes | Issuance tick |
+| `expiry_tick` | uint / null | No | Profile expiry (null = inherits DelegationConstraint expiry) |
+| `suite_profile` | tstr | Yes | CryptoSuiteProfile reference |
+| `signature` | bstr | Yes | Signature over canonical body with `signature` omitted |
+
+No new refusal codes; refusals use existing AE codes (capability mismatch, delegation invalidation).
+
+#### AA.3 Reserved for future use
+
+#### AA.4 Reserved for future use
+
+#### AA.5 DelegationConstraint Scope Vocabulary (Normative)
+
+DelegationConstraint.scope tokens MUST be stable, lowercase ASCII tokens with no whitespace, no path separators, and no quotes.
+
+##### AA.5.1 Token Format
+
+Scope tokens follow the format: `<domain>:<resource>:<action>`
+
+Where:
+- `<domain>` is the governance domain
+- `<resource>` is the specific resource or wildcard
+- `<action>` is the permitted action
+
+##### AA.5.2 Reserved Scope Tokens
+
+| Token | Meaning |
+|-------|---------|
+| `custody:btc:spend` | May initiate Bitcoin spend operations |
+| `custody:btc:receive` | May generate receive addresses |
+| `custody:*:view` | May view custody state (read-only) |
+| `tool:<tool_id>:invoke` | May invoke the specified tool |
+| `tool:*:invoke` | May invoke any tool in the Tool Capability Profile |
+| `gateway:<service_id>:call` | May use gateway adapter for the specified service |
+| `gateway:*:call` | May use any registered gateway adapter |
+| `session:*:create` | May create new sessions (within delegation bounds) |
+| `session:*:resume` | May resume existing sessions |
+
+##### AA.5.3 Scope Token Rules
+
+1. The wildcard `*` applies to the resource segment only. It MUST NOT appear in domain or action segments.
+2. Unknown scope tokens MUST be refused.
+3. The effective authority surface is the intersection of:
+   - DelegationConstraint.scope tokens, and
+   - the active Tool Capability Profile.
+   A scope token has no effect if the Tool Capability Profile does not permit the corresponding tool_id or gateway action.
+4. Scope tokens are evidence, not authority. PQSEC evaluates them alongside all other predicates.
+5. Scope token invalidity MUST be refused using an AE-registered refusal code. Default mapping: `E_DELEGATION_INVALID`.
+
+#### AA.6 Authority Boundary
+
+This annex defines composition flows. It does not grant authority, modify enforcement semantics, or create new predicate types. All enforcement remains exclusively within PQSEC.
+
+---
+
+## Changelog
+
+### Version 1.2.0
+
+* Added **Section 27.10 -- Tool Namespace Governance**: defines namespace structure for tool_id values, reserved `pq.` prefix, schema registry binding, and `E_TOOL_SCHEMA_UNSUPPORTED` refusal code.
+* Added **Section 27.11 -- AggregationScope**: defines cross-device, cross-tenant, and fleet aggregation boundary rules with scope types, linkage prohibition, and `E_AGGREGATION_SCOPE_REQUIRED` refusal code. Includes generalised stable join key prohibition.
+* Added **Section 27.12 -- Probabilistic Normalisation**: defines deterministic fixed-point normalisation for classifier outputs with floor-based conversion and cross-platform determinism requirements.
+* Added **Section 27.13 -- SafetyDomain Classification**: defines safety domain taxonomy (general_assistant, content_moderation, autonomous_agent, safety_critical, embodied_control) with PQEA interaction rules for embodied_control domain.
+* Updated **dependency table** to require PQSEC ≥ 2.0.3 and PQSF ≥ 2.0.3.
+* Updated **Conformance Determination** (Section 25, formerly Conformance Checklist) with entries for all new sections.
+
+* **Command Surface Isolation (§27.3)**
+  Added structural constraints prohibiting generic shell execution as a tool unless explicitly enumerated, schema-bound, and interactively approved. No heuristic detection; enforced via Tool Capability Profile structure.
+
+* **Memory Authority Prohibition (§27.4)**
+  Persistent memory content MUST NOT grant authority. Stored instructions must be re-classified, re-bound to fresh intent_hash, and re-evaluated under current policy. Prevents deferred authority and persistent prompt injection abuse.
+
+* **Authority boundary hardened**
+  Formalised explicit prohibition on AI self-asserted authority, permission, or execution semantics.
+
+* **Deterministic drift framework finalised**
+  Replaced float drift scoring with fixed-point representation (`drift_score_value` / `drift_score_scale`) and canonicalised drift state classification (NONE / WARNING / CRITICAL).
+
+* **Behavioural fingerprint governance expanded**
+  Added probe rotation, hybrid probe sets, and probe immutability constraints.
+
+* **SafePrompt strengthened**
+  Bound SafePrompt to session, exporter hash, consent reference, and expiry with mandatory canonical encoding and signature validation.
+
+* **Tool Capability Profile formalised**
+  Introduced `pqai.tool_profile` receipt type, deterministic parameter schemas, supervision lattice, and explicit fail-closed enforcement hooks for PQSEC.
+
+* **Emission discipline introduced (20A)**
+  Constrained artefact production to operation scope to prevent timing and telemetry leakage.
+
+* **Authority mutation classification (Annex V)**
+  Defined AI authority mutation categories and required evidence for model replacement, policy changes, and tool elevation.
+
+* **Security boundary clarifications**
+  Consolidated fail-closed semantics, non-authority statements, and explicit enforcement delegation to PQSEC.
+
+---
+
+## Funding (Non-Normative)
+
 `bc1q380874ggwuavgldrsyqzzn9zmvvldkrs8aygkw`
